@@ -4,6 +4,15 @@ Historial cronológico de cambios. Para el manual público consultar
 [README.md](README.md); para el estado técnico vigente, [MEMORIA.md](MEMORIA.md).
 Última actualización: 2026-09-12.
 
+## 2026-09-12 — Publicación 2.1.6
+
+- ASS/SSA integrado en MKV: se conserva y se extrae también su SRT, heredando
+  idioma y tipo. Corregido con *Guardianes de la noche*: SRT forzado, SRT
+  completo, ASS forzado y ASS completo.
+- Los títulos explícitos de pista (`Castellano`, `Español latino`, `es-419`)
+  tienen prioridad sobre la inferencia por texto; dos ASS castellanos ya no se
+  separan artificialmente en castellano/latino.
+
 ## 2026-09-12 — Publicación 2.1.5
 
 - Reanudación de conversión: un AC3 ya presente en `temporal/` se reutiliza si

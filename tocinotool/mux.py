@@ -97,6 +97,21 @@ def _subtipo_interno(p: probe.Pista) -> str:
     return "complete"
 
 
+def _variante_es_explicita(p: probe.Pista) -> Optional[str]:
+    """Variante española declarada por el título de la pista, si existe.
+
+    Un título de plataforma como ``Castellano [Completos] [ASS]`` es más fiable
+    que deducir una variante por unas pocas líneas de diálogo. Solo los títulos
+    sin esa indicación pasan por el detector de texto.
+    """
+    titulo = (p.titulo or "").casefold()
+    if any(x in titulo for x in ("latino", "es-419", "es_419", "latam")):
+        return "spal"
+    if any(x in titulo for x in ("castellano", "es-es", "es_es", "españa")):
+        return "spa"
+    return None
+
+
 def _tokens(resto: str) -> List[str]:
     return [t for t in _SEP.split(resto.lower()) if t]
 
@@ -195,8 +210,11 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
     #    (mov_text de mp4) se extraen a srt con ffmpeg y entran como sueltos.
     hay_video = False
     spa_internos: List[PistaPlan] = []
+    derivadas_ass: List[Tuple[PistaPlan, PistaPlan]] = []
     for tid, p in pistas_contenedor(video, cfg, incluir_no_muxeables=True):
         idioma = cfg.canon_idioma(p.idioma)
+        if p.tipo == "subtitle":
+            idioma = _variante_es_explicita(p) or idioma
         if p.tipo == "video":
             if tid is None:
                 continue
@@ -219,7 +237,23 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
                 pp = anadir(fi, 0, p, idioma, _subtipo_interno(p), conservar_subs, f"{video.name} (extraído)")
                 pp.detalle = "srt (extraído)"
             else:
-                pp = anadir(0, tid, p, idioma, _subtipo_interno(p), conservar_subs, video.name)
+                subtipo = _subtipo_interno(p)
+                pp = anadir(0, tid, p, idioma, subtipo, conservar_subs, video.name)
+                # ASS/SSA interno: se conserva para quien quiera el typesetting
+                # original y se añade su copia SRT limpia, igual que con ASS
+                # suelto. El SRT hereda idioma y flag de la pista de origen.
+                if p.codec.lower() in ("ass", "ssa"):
+                    temporal.mkdir(exist_ok=True)
+                    srt = temporal / f"{video.stem}.{idioma}.{p.indice}.srt"
+                    ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)
+                    tools.ejecutar_silencioso([ffmpeg, "-y", "-nostdin", "-hide_banner", "-loglevel", "error",
+                                               "-i", str(video), "-map", f"0:{p.indice}", "-c:s", "srt", str(srt)])
+                    srt.write_text(_subs.limpiar_texto_srt(_subs.leer_texto(srt)), encoding="utf-8")
+                    fi = anadir_fichero(srt)
+                    copia_srt = anadir(fi, 0, p, idioma, subtipo, conservar_subs,
+                                      f"{video.name} (ASS → SRT)")
+                    copia_srt.detalle = "srt (extraído de ASS)"
+                    derivadas_ass.append((pp, copia_srt))
             if idioma in ("spa", "und"):
                 spa_internos.append(pp)
 
@@ -229,7 +263,8 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
         for pp, t in zip(spa_internos, textos):
             if pp.idioma == "und":
                 pp.idioma = _subs.detectar_idioma(t) or "und"
-        grupo = [(pp, t) for pp, t in zip(spa_internos, textos) if pp.idioma == "spa"]
+        grupo = [(pp, t) for pp, t in zip(spa_internos, textos)
+                 if pp.idioma == "spa" and _variante_es_explicita(pp.pista) is None]
         if grupo:
             coberturas = _subs.cobertura_subtitulos(video, cfg)
             maximo_cues = max((coberturas.get(pp.pista.indice, (0, 0.0, 0.0))[0]
@@ -247,6 +282,13 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
                 if not pp.forzado and _subs.es_forzado_por_cobertura(
                         coberturas.get(pp.pista.indice), maximo_cues):
                     pp.subtipo = "forced"
+
+    # Las copias SRT de ASS interno siguen al ASS original si el análisis ha
+    # corregido idioma o subtipo. Así no pueden quedar pares inconsistentes.
+    for ass, srt in derivadas_ass:
+        srt.idioma = ass.idioma
+        srt.subtipo = ass.subtipo
+        srt.aviso_taggeo = ass.aviso_taggeo
 
     # 2) ficheros sueltos: contenedores (mka/mkv → todas sus pistas de audio/subs) o pistas crudas
     for f in sueltos:

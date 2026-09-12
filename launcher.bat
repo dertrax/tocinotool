@@ -149,7 +149,7 @@ set "LOGFILE=%LOGDIR%\launcher_error_%RANDOM%_%RANDOM%.log"
 (
     echo tociNoTool - informe de error del launcher
     echo Fecha: %DATE% %TIME%
-    echo Version: 2.1.5
+    echo Version: 2.1.6
     echo Modulo: launcher
     echo Paso: %PASO%
     echo Detalle: %DETALLE%
