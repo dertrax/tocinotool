@@ -4,7 +4,7 @@ Este documento permite reconstruir `binaries/` al retomar el proyecto desde
 GitHub. Los ejecutables no se guardan en el repositorio porque FFmpeg supera el
 límite de tamaño de GitHub. El paquete ZIP de distribución sí los incluye.
 
-La referencia es la carpeta `binaries/` de tociNoTool v2.1.4 para Windows x64.
+La referencia es la carpeta `binaries/` de tociNoTool v2.1.5 para Windows x64.
 Descarga las versiones indicadas, extrae solo los ficheros señalados y verifica
 sus hashes. No sustituyas versiones por “la última” si se busca reproducir el
 paquete exactamente.

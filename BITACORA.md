@@ -4,6 +4,13 @@ Historial cronológico de cambios. Para el manual público consultar
 [README.md](README.md); para el estado técnico vigente, [MEMORIA.md](MEMORIA.md).
 Última actualización: 2026-09-12.
 
+## 2026-09-12 — Publicación 2.1.5
+
+- Reanudación de conversión: un AC3 ya presente en `temporal/` se reutiliza si
+  pasa la validación de codec, bitrate, canales y duración contra la fuente.
+  Un archivo parcial o incompatible se informa y se regenera; nunca se incluye
+  `temporal/` como material de entrada.
+
 ## 2026-09-12 — Publicación 2.1.4
 
 - Aviso de taggeo: cuando el origen declara un subtítulo como `spa`/`es-ES`

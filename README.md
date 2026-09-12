@@ -1,4 +1,4 @@
-# tociNoTool v2.1.4
+# tociNoTool v2.1.5
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -110,6 +110,9 @@ pero no se usa scraping ni una API externa obligatoria.
 
 - Se reconocen AVC/H.264, HEVC/H.265 y AV1.
 - El audio se convierte a AC3 según `config/audio.yaml`.
+- Si un AC3 ya existe en `temporal/`, se reutiliza después de validar codec,
+  bitrate, canales y duración frente a su fuente. Uno incompleto o incompatible
+  se avisa y se regenera.
 - El muxer aplica idioma, nombre, orden y flags default/forced.
 - ASS/SSA se conserva y se convierte también a SRT. Los carteles posicionados
   producen variantes forzadas ASS y SRT.

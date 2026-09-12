@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.1.4
+# Memoria del proyecto — tociNoTool v2.1.5
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -24,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.1.4-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.1.5-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos
@@ -83,6 +83,8 @@ asistente permite reintentar, descargar, indicar ruta o posponer.
 - La plataforma WEB-DL se confirma desde `plataformas.yaml`.
 - El muxer elimina título global y adjuntos, conserva capítulos y ordena pistas
   por idioma y calidad.
+- `ac3.convertir_fuente()` reutiliza los AC3 de `temporal/` tras validar codec,
+  bitrate, canales y duración; un derivado de una interrupción se regenera.
 - Subtítulos: SRT forzado, SRT completo, ASS forzado, ASS completo y después
   otros formatos. ASS/SSA se conserva y genera SRT; carteles posicionados
   producen variante forzada.

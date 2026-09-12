@@ -150,6 +150,8 @@ def _validar_ac3(ruta: Path, fuente: FuenteAC3, cfg) -> None:
     pista = medio.audios[0] if medio.audios else None
     if not pista or pista.codec != "ac3":
         raise RuntimeError(f"{ruta.name}: la salida no es AC3")
+    if pista.kbps is None or abs(pista.kbps - fuente.kbps) > 8:
+        raise RuntimeError(f"{ruta.name}: bitrate {pista.kbps or '?'} no coincide con AC3 {fuente.kbps}")
     if (fuente.pista.canales or 0) > 2 and pista.canales != 6:
         raise RuntimeError(f"{ruta.name}: se esperaban 6 canales y se obtuvieron {pista.canales}")
     if fuente.ruta != ruta and fuente.pista and medio.duracion and fuente.ruta.exists():
@@ -167,6 +169,13 @@ def convertir_fuente(fuente: FuenteAC3, cfg, destino_dir: Path, prefijo: str) ->
     """
     destino_dir.mkdir(parents=True, exist_ok=True)
     destino = destino_dir / f"{prefijo}.[{fuente.idioma}].ac3"
+    if destino.exists():
+        try:
+            _validar_ac3(destino, fuente, cfg)
+            ui.info(f"{destino.name}: AC3 temporal válido; se reutiliza.")
+            return destino
+        except Exception as exc:  # el temporal puede ser una conversión interrumpida
+            ui.aviso(f"{destino.name}: no se puede reutilizar ({exc}); se regenera.")
     ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)
     cmd = [ffmpeg, "-y", "-nostdin", "-hide_banner", "-loglevel", "warning", "-stats", "-i", str(fuente.ruta),
            "-map", f"0:{fuente.pista.indice}", "-vn", "-sn", "-dn"]
@@ -236,7 +245,6 @@ def procesar_grupos(cfg, grupos: list["ReleaseGroup"], perfil: str, revisar_plan
 
 def convertir(video: Path, conversiones: List[Conversion], cfg, salida_dir: Path) -> Dict[str, Path]:
     """Genera un .ac3 por conversión. Devuelve {idioma: ruta_ac3}."""
-    ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)
     medio = probe.analizar(video, cfg)
     res: Dict[str, Path] = {}
     for c in conversiones:
@@ -246,18 +254,8 @@ def convertir(video: Path, conversiones: List[Conversion], cfg, salida_dir: Path
         if pista is None:
             ui.aviso(f"{video.name}: no hay pista '{c.idioma}', se salta.")
             continue
-        destino = salida_dir / f"{video.stem}.[{c.idioma}].ac3"
-        cmd = [ffmpeg, "-y", "-nostdin", "-hide_banner", "-loglevel", "warning", "-stats", "-i", str(video),
-               "-map", f"0:{pista.indice}", "-vn", "-sn", "-dn"]
-        if c.copiar:
-            cmd += ["-c:a", "copy"]
-        else:
-            cmd += ["-c:a", "ac3", "-center_mixlev", "0.707", "-b:a", f"{c.kbps}k"]
-            if (pista.canales or 0) > 6:
-                cmd += ["-ac", "6"]  # AC3 no admite más de 5.1
-        cmd.append(str(destino))
-        tools.ejecutar(cmd, mostrar=False)   # ffmpeg -stats: una línea de progreso
-        res[c.idioma] = destino
+        fuente = FuenteAC3(video, pista, c.idioma, c.kbps, c.copiar)
+        res[c.idioma] = convertir_fuente(fuente, cfg, salida_dir, video.stem)
     return res
 
 
