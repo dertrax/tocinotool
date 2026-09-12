@@ -31,6 +31,11 @@ enviar mensajes ni publicar cambios automáticamente.
   personales y licencias.
 - Recalcular SHA-256 tras cada modificación. Los ZIP `NO_COMPARTIR-*` no se
   distribuyen.
+- Las actualizaciones diferenciales se generan con
+  `herramientas/generar_actualizacion.ps1`: compara dos paquetes Windows y
+  entrega un ZIP de payload más un BAT. El BAT se deja junto al ZIP en la raíz
+  de la instalación, informa de los cambios, conserva `config/`, `.venv/` y
+  `logs/`, borra el ZIP al completar y no elimina archivos obsoletos.
 
 ## Arranque y diagnóstico
 

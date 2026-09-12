@@ -10,6 +10,11 @@ Historial cronológico de cambios. Para el manual público consultar
   pero el análisis lo clasifica como español latino, el plan lo muestra antes
   de confirmar y explica cómo corregir el idioma manualmente. No afecta a
   pistas ya identificadas explícitamente como `es-419`.
+- Sistema de actualizaciones diferenciales para Windows:
+  `herramientas/generar_actualizacion.ps1` compara dos paquetes, crea un ZIP
+  con solo los cambios y un BAT autocontenido. El usuario coloca ambos en la
+  raíz, ve el resumen antes de confirmar y conserva su configuración, venv y
+  logs. Al terminar se elimina el ZIP y puede borrar el BAT.
 
 ## 2026-09-12 — Publicación 2.1.3
 

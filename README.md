@@ -204,6 +204,20 @@ El proyecto se comparte para la comunidad. Documenta mejoras o errores y
 propónlos a **jascott** por Telegram: **@jascott**. No incluyas credenciales,
 licencias, cookies, rutas personales ni contenido de releases en los informes.
 
+## Actualizaciones de Windows
+
+Una actualización diferencial contiene un ZIP y un archivo
+`Actualizar-tociNoTool-vX.Y.Z.bat`. Copia ambos a la raíz de la instalación
+(junto a `launcher.bat`) y ejecuta el BAT con la tool cerrada. Antes de copiar
+nada indica versión de origen, lista los archivos que cambiarán y pide
+confirmación. Conserva `config/`, `.venv/` y `logs/`; al terminar borra el ZIP
+y deja solo el BAT, que ya se puede eliminar.
+
+Para generar una actualización al publicar una versión, el mantenedor usa
+`herramientas/generar_actualizacion.ps1`, comparando las dos carpetas completas
+de distribución. También detecta archivos nuevos y, si algún día cambian,
+binarios; nunca empaqueta la configuración particular.
+
 ## Documentación del proyecto
 
 En el repositorio de GitHub se mantienen también `MEMORIA.md` (estado técnico y
