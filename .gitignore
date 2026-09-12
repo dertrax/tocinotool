@@ -1,0 +1,26 @@
+# Entorno y ficheros generados localmente
+.venv/
+__pycache__/
+*.py[cod]
+logs/
+
+# Configuración particular: puede incluir usuario, rutas y datos del tracker.
+# Las plantillas públicas viven en tocinotool/config_defaults/.
+config/
+config.yaml
+config.yaml.bak
+
+# Dependencias y entregables: se distribuyen en el ZIP de cada release,
+# no en el repositorio fuente (FFmpeg supera el límite de tamaño de GitHub).
+binaries/
+publicar/
+
+# Material de pruebas, historial anterior y resultados de releases
+_legacy/
+temporal/
+originales/
+*.mkv
+*.torrent
+*.nfo
+info.txt
+
