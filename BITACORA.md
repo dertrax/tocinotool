@@ -31,6 +31,8 @@ Historial cronológico de cambios. Para el manual público consultar
   con solo los cambios y un BAT autocontenido. El usuario coloca ambos en la
   raíz, ve el resumen antes de confirmar y conserva su configuración, venv y
   logs. Al terminar se elimina el ZIP y puede borrar el BAT.
+- El generador admite actualización acumulativa para bases antiguas: actualiza
+  código y plantillas sin descargar binarios de nuevo ni afectar `config/`.
 
 ## 2026-09-12 — Publicación 2.1.3
 

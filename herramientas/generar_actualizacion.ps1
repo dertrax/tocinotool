@@ -14,17 +14,27 @@ intactos.
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)] [string] $Base,
+    [string] $Base,
     [Parameter(Mandatory)] [string] $Nuevo,
     [Parameter(Mandatory)] [string] $Version,
+    [string] $BaseVersion,
+    [switch] $Acumulativa,
     [string] $Destino = (Join-Path $PSScriptRoot ("..\\publicar\\actualizacion-v{0}" -f $Version))
 )
 
 $ErrorActionPreference = 'Stop'
-$basePath = (Resolve-Path -LiteralPath $Base).Path
 $nuevoPath = (Resolve-Path -LiteralPath $Nuevo).Path
-if ((Resolve-Path -LiteralPath $basePath).Path -eq (Resolve-Path -LiteralPath $nuevoPath).Path) {
-    throw 'Base y Nuevo deben ser carpetas de versiones distintas.'
+if (-not $Acumulativa -and [string]::IsNullOrWhiteSpace($Base)) {
+    throw 'Indica -Base para una actualización diferencial o usa -Acumulativa con -BaseVersion.'
+}
+if ($Acumulativa -and [string]::IsNullOrWhiteSpace($BaseVersion)) {
+    throw 'Una actualización acumulativa requiere -BaseVersion, por ejemplo 2.1.0.'
+}
+if (-not $Acumulativa) {
+    $basePath = (Resolve-Path -LiteralPath $Base).Path
+    if ($basePath -eq $nuevoPath) {
+        throw 'Base y Nuevo deben ser carpetas de versiones distintas.'
+    }
 }
 
 function Ruta-Relativa([string] $raiz, [string] $ruta) {
@@ -40,9 +50,11 @@ function Es-Privado([string] $relativa) {
 }
 
 $baseHashes = @{}
-Get-ChildItem -LiteralPath $basePath -File -Recurse | ForEach-Object {
-    $rel = Ruta-Relativa $basePath $_.FullName
-    if (-not (Es-Privado $rel)) { $baseHashes[$rel] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+if (-not $Acumulativa) {
+    Get-ChildItem -LiteralPath $basePath -File -Recurse | ForEach-Object {
+        $rel = Ruta-Relativa $basePath $_.FullName
+        if (-not (Es-Privado $rel)) { $baseHashes[$rel] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+    }
 }
 
 if (Test-Path -LiteralPath $Destino) {
@@ -54,9 +66,12 @@ $cambios = [System.Collections.Generic.List[string]]::new()
 
 Get-ChildItem -LiteralPath $nuevoPath -File -Recurse | ForEach-Object {
     $rel = Ruta-Relativa $nuevoPath $_.FullName
-    if (-not (Es-Privado $rel)) {
+    # La acumulativa actualiza el código desde una versión antigua sin obligar
+    # a descargar de nuevo los binarios portables. Para renovar binarios se
+    # publica un paquete completo o una actualización diferencial con Base.
+    if (-not (Es-Privado $rel) -and (-not $Acumulativa -or $rel -notmatch '^binaries/')) {
         $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
-        if (-not $baseHashes.ContainsKey($rel) -or $baseHashes[$rel] -ne $hash) {
+        if ($Acumulativa -or -not $baseHashes.ContainsKey($rel) -or $baseHashes[$rel] -ne $hash) {
             $destinoFichero = Join-Path $payload ($rel -replace '/', '\\')
             New-Item -ItemType Directory -Path (Split-Path -Parent $destinoFichero) -Force | Out-Null
             Copy-Item -LiteralPath $_.FullName -Destination $destinoFichero -Force
@@ -67,7 +82,7 @@ Get-ChildItem -LiteralPath $nuevoPath -File -Recurse | ForEach-Object {
 
 if ($cambios.Count -eq 0) { throw 'No hay ficheros públicos modificados entre ambas versiones.' }
 
-$baseVersion = if ((Split-Path -Leaf $basePath) -match 'v(.+)-windows$') { $Matches[1] } else { 'anterior' }
+$baseVersion = if ($Acumulativa) { $BaseVersion } elseif ((Split-Path -Leaf $basePath) -match 'v(.+)-windows$') { $Matches[1] } else { 'anterior' }
 $zipNombre = "tociNoTool-update-v$Version.zip"
 $batNombre = "Actualizar-tociNoTool-v$Version.bat"
 $zip = Join-Path $Destino $zipNombre

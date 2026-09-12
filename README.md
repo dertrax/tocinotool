@@ -225,6 +225,11 @@ Para generar una actualización al publicar una versión, el mantenedor usa
 de distribución. También detecta archivos nuevos y, si algún día cambian,
 binarios; nunca empaqueta la configuración particular.
 
+Para usuarios de una versión antigua sin una base intermedia disponible, el
+mantenedor puede usar `-Acumulativa -BaseVersion X.Y.Z`. Genera un paquete de
+código y plantillas compatible con esa versión, sin volver a descargar los
+binarios portables ni tocar datos locales.
+
 ## Documentación del proyecto
 
 En el repositorio de GitHub se mantienen también `MEMORIA.md` (estado técnico y

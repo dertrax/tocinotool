@@ -36,6 +36,9 @@ enviar mensajes ni publicar cambios automáticamente.
   entrega un ZIP de payload más un BAT. El BAT se deja junto al ZIP en la raíz
   de la instalación, informa de los cambios, conserva `config/`, `.venv/` y
   `logs/`, borra el ZIP al completar y no elimina archivos obsoletos.
+- El modo `-Acumulativa -BaseVersion X.Y.Z` permite actualizar instalaciones
+  antiguas cuando no hay una cadena de parches. Incluye código y plantillas,
+  no `binaries/` ni datos locales.
 
 ## Arranque y diagnóstico
 
