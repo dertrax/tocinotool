@@ -230,8 +230,17 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
                 pp.idioma = _subs.detectar_idioma(t) or "und"
         grupo = [(pp, t) for pp, t in zip(spa_internos, textos) if pp.idioma == "spa"]
         if grupo:
+            coberturas = _subs.cobertura_subtitulos(video, cfg)
+            maximo_cues = max((coberturas.get(pp.pista.indice, (0, 0.0, 0.0))[0]
+                               for pp, _ in grupo), default=0)
             for pp, variante in zip([g[0] for g in grupo], _subs.asignar_variantes([g[1] for g in grupo])):
                 pp.idioma = variante
+                # Algunas plataformas dejan ``forced=0`` incluso en pistas de
+                # carteles. Se compara el número de cues con otra pista
+                # española completa para no confundirla con diálogos cortos.
+                if not pp.forzado and _subs.es_forzado_por_cobertura(
+                        coberturas.get(pp.pista.indice), maximo_cues):
+                    pp.subtipo = "forced"
 
     # 2) ficheros sueltos: contenedores (mka/mkv → todas sus pistas de audio/subs) o pistas crudas
     for f in sueltos:

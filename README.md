@@ -1,4 +1,4 @@
-# tociNoTool v2.2.0
+# tociNoTool v2.1.3
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -113,6 +113,12 @@ pero no se usa scraping ni una API externa obligatoria.
 - El muxer aplica idioma, nombre, orden y flags default/forced.
 - ASS/SSA se conserva y se convierte también a SRT. Los carteles posicionados
   producen variantes forzadas ASS y SRT.
+- Los WebVTT de plataformas se convierten directamente a SRT: se conserva el
+  texto y la cursiva, pero no las clases de color/fondo ni el posicionamiento
+  básico de WebVTT. Un nombre como `.forced.vtt` mantiene el flag forzado.
+- Si un MP4 trae dos subtítulos españoles sin flag `forced`, el muxer compara
+  sus cues: una pista muy corta frente a otra completa se propone como
+  forzada. Es una regla conservadora y el plan sigue siendo editable.
 - El orden de subtítulos es: SRT forzado, SRT completo, ASS forzado, ASS
   completo y después otros formatos compatibles.
 

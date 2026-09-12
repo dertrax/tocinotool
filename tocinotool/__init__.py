@@ -8,7 +8,7 @@ cookies, licencias, rutas personales ni contenido de releases.
 """
 from pathlib import Path
 
-__version__ = "2.2.0"
+__version__ = "2.1.3"
 
 # Raíz del proyecto (carpeta que contiene config/, binaries/ y este paquete)
 ROOT = Path(__file__).resolve().parent.parent

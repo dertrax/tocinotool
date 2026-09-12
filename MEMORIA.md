@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.2.0
+# Memoria del proyecto — tociNoTool v2.1.3
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -24,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.2.0-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.1.3-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos
@@ -81,6 +81,13 @@ asistente permite reintentar, descargar, indicar ruta o posponer.
 - Subtítulos: SRT forzado, SRT completo, ASS forzado, ASS completo y después
   otros formatos. ASS/SSA se conserva y genera SRT; carteles posicionados
   producen variante forzada.
+- WebVTT se convierte con el lector propio de `subs.py`, no con FFmpeg: retiene
+  texto y etiquetas SRT comunes, no colores/fondo/posición. Evita los SRT
+  vacíos que FFmpeg podía generar con perfiles WebVTT de Netflix.
+- Para dos pistas españolas internas sin flag `forced`, `subs.cobertura_subtitulos`
+  compara los cues de ambas; solo marca forzada una candidata de hasta 80 cues
+  y al menos cinco veces menor que otra española completa. El usuario puede
+  modificar el plan antes del mux.
 - Un MKV suelto limita el análisis a ese contenedor.
 - `originales/` nunca se elimina automáticamente.
 

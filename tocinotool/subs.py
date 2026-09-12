@@ -9,6 +9,7 @@ Casos que resuelve (vistos con descargas de Crunchyroll):
     vocabulario del texto (vosotros/vale/tío vs ustedes/celular/carro…).
   * srt sin idioma en el nombre: se propone el idioma por el texto (es/en/fr/de/it/pt/ca).
 """
+import html
 import re
 from pathlib import Path
 from typing import Optional
@@ -75,7 +76,12 @@ def preparar_suelto(ruta: Path, destino_dir: Path, cfg=None) -> Path:
     ffmpeg y limpia etiquetas. El llamador conserva también el ASS/SSA original
     cuando corresponda. Si el fichero ya está bien, lo devuelve tal cual."""
     ext = ruta.suffix.lower()
-    if ext in (".ass", ".ssa", ".vtt"):
+    if ext == ".vtt":
+        destino_dir.mkdir(parents=True, exist_ok=True)
+        salida = destino_dir / (ruta.stem + ".srt")
+        _vtt_a_srt(ruta, salida)
+        return salida
+    if ext in (".ass", ".ssa"):
         destino_dir.mkdir(parents=True, exist_ok=True)
         salida = destino_dir / (ruta.stem + ".srt")
         ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)
@@ -91,6 +97,96 @@ def preparar_suelto(ruta: Path, destino_dir: Path, cfg=None) -> Path:
             salida.write_text(limpiar_texto_srt(texto), encoding="utf-8")
             return salida
     return ruta
+
+
+_VTT_TIEMPO = re.compile(
+    r"^\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[.](\d{3})\s+-->\s+"
+    r"(?:(\d{1,2}):)?(\d{2}):(\d{2})[.](\d{3})(?:\s+.*)?$"
+)
+_VTT_CLASE = re.compile(r"</?c(?:\.[^ >]+)*>", re.I)
+_VTT_ETIQUETA = re.compile(r"</?(?:v|lang|ruby|rt)(?:\s+[^>]*)?>", re.I)
+
+
+def _vtt_tiempo(grupos: tuple, inicio: bool) -> str:
+    """Convierte un tiempo WebVTT a la sintaxis SRT."""
+    offset = 0 if inicio else 4
+    horas = int(grupos[offset] or 0)
+    minutos, segundos, ms = (int(grupos[offset + i]) for i in (1, 2, 3))
+    return f"{horas:02d}:{minutos:02d}:{segundos:02d},{ms:03d}"
+
+
+def _vtt_a_srt(origen: Path, destino: Path) -> None:
+    """Conversor WebVTT de Netflix sin depender del demuxer de FFmpeg.
+
+    Conserva texto y etiquetas SRT comunes (cursiva/negrita/subrayado), pero
+    elimina posicionamiento, clases de color/fondo y notas WebVTT. Esas marcas
+    no contienen el typesetting avanzado de un ASS original.
+    """
+    texto = leer_texto(origen).replace("\r\n", "\n").replace("\r", "\n").lstrip("\ufeff")
+    bloques = []
+    for bloque in re.split(r"\n[ \t]*\n", texto):
+        lineas = [linea.rstrip() for linea in bloque.split("\n")]
+        if not lineas:
+            continue
+        primero = lineas[0].strip()
+        if not primero or primero.upper().startswith(("WEBVTT", "NOTE", "STYLE", "REGION")):
+            continue
+        indice_tiempo = 0 if "-->" in lineas[0] else 1
+        if indice_tiempo >= len(lineas):
+            continue
+        m = _VTT_TIEMPO.match(lineas[indice_tiempo])
+        if not m:
+            continue
+        contenido = "\n".join(lineas[indice_tiempo + 1:]).strip()
+        contenido = _VTT_CLASE.sub("", contenido)
+        contenido = _VTT_ETIQUETA.sub("", contenido)
+        contenido = html.unescape(contenido).strip()
+        if contenido:
+            bloques.append((_vtt_tiempo(m.groups(), True), _vtt_tiempo(m.groups(), False), contenido))
+    if not bloques:
+        raise RuntimeError(f"{origen.name}: WebVTT sin cues legibles; no se crea un SRT vacío.")
+    destino.write_text("\n\n".join(f"{n}\n{ini} --> {fin}\n{txt}" for n, (ini, fin, txt) in enumerate(bloques, 1)) + "\n",
+                       encoding="utf-8")
+
+
+def cobertura_subtitulos(video: Path, cfg=None) -> dict[int, tuple[int, float, float]]:
+    """Devuelve ``{índice_global: (cues, primero, último)}`` de un contenedor.
+
+    Algunos MP4 añaden paquetes vacíos al principio y al final de una pista, de
+    modo que su duración aparente no basta para distinguir los carteles. El
+    número relativo de cues entre pistas del mismo idioma sí es una señal útil.
+    """
+    ffprobe = tools.buscar("ffprobe", cfg, obligatorio=True)
+    r = tools.ejecutar([ffprobe, "-v", "error", "-show_entries", "packet=stream_index,pts_time",
+                        "-select_streams", "s", "-of", "csv=p=0", str(video)],
+                       capturar=True, mostrar=False, comprobar=False)
+    tiempos: dict[int, list[float]] = {}
+    for linea in (r.stdout or "").splitlines():
+        partes = linea.split(",", 1)
+        if len(partes) != 2:
+            continue
+        try:
+            stream, tiempo = int(partes[0]), float(partes[1])
+        except ValueError:
+            continue
+        tiempos.setdefault(stream, []).append(tiempo)
+    return {stream: (len(valores), min(valores), max(valores))
+            for stream, valores in tiempos.items() if valores}
+
+
+def es_forzado_por_cobertura(cobertura: Optional[tuple[int, float, float]],
+                             maximo_mismo_idioma: int) -> bool:
+    """Detecta una pista de carteles sin flag ``forced`` de forma conservadora.
+
+    Solo se aplica cuando hay otra pista del mismo idioma claramente completa:
+    la candidata debe tener como máximo 80 cues y cinco veces menos cues que
+    aquella. Así una pista de diálogo corta no se etiqueta erróneamente como
+    forzada. Los metadatos explícitos del contenedor siempre tienen prioridad.
+    """
+    if not cobertura or maximo_mismo_idioma <= 0:
+        return False
+    cues, _inicio, _fin = cobertura
+    return cues <= 80 and cues * 5 <= maximo_mismo_idioma
 
 
 def _tiempo_srt(valor: str) -> Optional[str]:

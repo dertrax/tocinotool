@@ -4,6 +4,15 @@ Historial cronológico de cambios. Para el manual público consultar
 [README.md](README.md); para el estado técnico vigente, [MEMORIA.md](MEMORIA.md).
 Última actualización: 2026-09-12.
 
+## 2026-09-12 — Publicación 2.1.3
+
+- WebVTT de Netflix: conversión propia a SRT válido. Conserva texto y cursiva,
+  descarta solo las clases de color/fondo y posición WebVTT; no crea SRT vacíos
+  cuando FFmpeg no entiende el perfil del origen.
+- Dos subtítulos españoles internos sin `forced`: compara los cues de las
+  pistas españolas y marca forzada únicamente una candidata muy corta frente a
+  una completa. Corregido con *Demon Slayer* (latino de carteles sin flag).
+
 ## 2026-09-12 — Publicación 2.2.0
 
 - Parser local de series independiente de FileBot: episodios `SxxExx`/`1x02`,
