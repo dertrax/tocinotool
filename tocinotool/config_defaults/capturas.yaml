@@ -1,0 +1,13 @@
+# ============================================================================
+#  capturas.yaml — capturas para el tracker.
+# ============================================================================
+
+# Capturas
+capturas:
+  formato: png            # png | jpg
+  calidad_jpg: 92
+  ancho_max: 1920         # 0 = resolución original; 1920 reduce 4K a 1080p
+  candidatos: 40          # fotogramas entre los que se elige el más representativo
+  porcentajes: [10, 25, 40, 55, 70, 85]   # posiciones en % de la duración
+  tonemap_hdr: true       # convierte HDR/HLG a SDR para que se vea bien
+  carpeta: capturas       # subcarpeta de salida (relativa a la de trabajo)

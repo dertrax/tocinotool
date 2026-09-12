@@ -1,0 +1,49 @@
+# ============================================================================
+#  muxer.yaml — cómo se nombran y clasifican las pistas del mkv final
+#  (sustituye a los config del AutoMuxerCli) y qué ficheros sueltos se reconocen.
+# ============================================================================
+
+# Plantillas de nombre de pista
+plantillas:
+  pista_audio: "{lang} {codec} {channels} @ {bitrate} kbps"
+  pista_subtitulo: "{lang} [{type}]{codec}"
+
+# Subtítulos: tipos, palabras clave en nombres de fichero y formatos
+subtitulos:
+  tipos:
+    forced: Forzados
+    complete: Completos
+    sdh: Para Sordos
+  # palabras (en minúsculas) que identifican el tipo en el nombre del fichero
+  palabras:
+    forced: [forced, forzados, forz, narrative]
+    complete: [completos, complete, full, stripped, stripped_sdh, subtitles, subs]
+    sdh: [sdh, closedcaptions, cc, sordos, hoh]
+  formatos:
+    srt: ""            # los srt no llevan sufijo de códec en el nombre de pista
+    ass: " [ASS]"
+    ssa: " [ASS]"
+    sup: " [PGS]"
+    idx: " [VobSub]"
+    vtt: ""
+  # Orden de pistas dentro de cada idioma: primero formato, después forzado/completo/SDH
+  orden_formatos: [srt, ass, ssa, sup, idx, vtt]
+  # el sub forzado en estos idiomas se marca como default+forced
+  forzado_default: [spa]
+
+# Extensiones de ficheros sueltos que el muxer reconoce
+extensiones:
+  # Contenedores y pistas elementales candidatas. El códec real se confirma
+  # siempre con ffprobe; estas extensiones nunca son una decisión por sí solas.
+  video: [mkv, mp4, m4v, avi, ts, m2ts, webm, h264, avc, "264", h265, hevc, "265", av1, ivf, obu]
+  audio: [ac3, eac3, aac, dts, dtshd, thd, truehd, flac, mka, m4a, opus, mp3, wav]
+  # VobSub se introduce por su .idx; el .sub binario asociado se detecta como auxiliar.
+  subtitulo: [srt, ass, ssa, sup, idx, vtt]
+
+codecs_video:
+  h264: H264
+  hevc: H265
+  av1: AV1
+  vp9: VP9
+  mpeg2video: MPEG2
+  mpeg4: XviD

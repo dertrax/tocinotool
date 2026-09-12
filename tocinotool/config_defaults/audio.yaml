@@ -1,0 +1,58 @@
+# ============================================================================
+#  audio.yaml — codecs de audio, canales, orden por calidad y la tabla de
+#  conversión a AC3. Lo usan conversión y muxer.
+# ============================================================================
+
+# Codecs. Clave = nombre que devuelve ffprobe (codec_name). Valor = nombre comercial.
+codecs_audio:
+  ac3: DD
+  eac3: DD+
+  aac: AAC
+  dts: DTS
+  truehd: TrueHD
+  flac: FLAC
+  opus: Opus
+  mp3: MP3
+  mp2: MP2
+  vorbis: Vorbis
+  pcm_s16le: PCM
+  pcm_s24le: PCM
+
+# Variantes por perfil (ffprobe "profile") que cambian el nombre comercial
+codecs_audio_perfil:
+  "DTS-HD MA": DTS-HD MA
+  "Master Audio": DTS-HD MA
+  "DTS-HD HRA": DTS-HD HRA
+  "High Resolution": DTS-HD HRA
+  "DTS:X": "DTS:X"
+  "HE-AAC": AAC (HE-AAC)
+
+canales:
+  1: "1.0"
+  2: "2.0"
+  3: "2.1"
+  6: "5.1"
+  7: "6.1"
+  8: "7.1"
+
+# Dentro de un mismo idioma, orden por calidad de códec (nombre comercial; el resto, después)
+orden_codecs_audio: [TrueHD Atmos, TrueHD, DTS-HD HRA, DTS-HD MA, DTS:X, DTS, FLAC, DD+ Atmos, DD+, DD, AAC, AAC (HE-AAC), Opus, MP3, MP2]
+
+# Tablas de conversión a AC3. Para cada codec de origen: bitrate origen → AC3.
+# Se elige la fila cuyo bitrate de origen sea el más cercano por arriba;
+# si el origen supera la tabla se usa la última fila.
+bitrates_ac3:
+  "5.1":
+    aac:  {192: 384, 256: 448, 320: 640, 448: 640}
+    eac3: {256: 384, 320: 448, 448: 640, 640: 640}
+    ac3:  {384: 384, 448: 448, 640: 640}
+    dts:  {768: 448, 1536: 640}
+    otros: 640          # codecs sin tabla (TrueHD, FLAC, Opus…)
+  "2.0":
+    aac:  {96: 192, 128: 256, 160: 256, 192: 256}
+    eac3: {128: 192, 160: 256, 192: 256, 256: 256}
+    mp2:  {160: 192, 192: 256, 256: 256, 320: 256}
+    mp3:  {128: 192, 160: 256, 192: 256, 224: 256}
+    ac3:  {192: 192, 256: 256}
+    otros: 256
+  maximo: 640          # AC3 nunca supera esto

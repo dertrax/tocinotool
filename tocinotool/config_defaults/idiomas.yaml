@@ -1,0 +1,98 @@
+# ============================================================================
+#  idiomas.yaml — idiomas. Lo usan TODOS los pasos: conversión (idioma de cada
+#  pista), muxer (nombres y orden), renombrado y ficha.
+#  Si aparece un idioma que no está aquí, la tool pregunta el nombre y lo guarda.
+# ============================================================================
+
+# Idiomas. Clave = código canónico (ISO 639-2/B, el que usa mkvmerge/ffprobe).
+# Si la tool encuentra un código que no está aquí, te pregunta el nombre y lo guarda.
+idiomas:
+  spa: Castellano
+  spal: Español latino
+  eng: Inglés
+  cat: Catalán
+  glg: Gallego
+  baq: Euskera
+  fre: Francés
+  ger: Alemán
+  ita: Italiano
+  por: Portugués
+  dut: Holandés
+  rus: Ruso
+  jpn: Japonés
+  kor: Coreano
+  chi: Chino
+  ara: Árabe
+  hin: Hindi
+  tur: Turco
+  pol: Polaco
+  swe: Sueco
+  nor: Noruego
+  dan: Danés
+  fin: Finlandés
+  gre: Griego
+  heb: Hebreo
+  hun: Húngaro
+  rum: Rumano
+  cze: Checo
+  tha: Tailandés
+  ind: Indonesio
+  ukr: Ucraniano
+  und: Desconocido
+
+# Alias → código canónico. Sirve para nombres de fichero (es-ES, en.forced…)
+# y para códigos ISO 639-1 / 639-2/T que devuelven algunas herramientas.
+idiomas_alias:
+  es: spa
+  es-es: spa
+  es-419: spal
+  es-mx: spal
+  lat: spal
+  en: eng
+  en-us: eng
+  en-gb: eng
+  ca: cat
+  gl: glg
+  eu: baq
+  eus: baq
+  fr: fre
+  fra: fre
+  de: ger
+  deu: ger
+  it: ita
+  pt: por
+  pt-br: por
+  nl: dut
+  nld: dut
+  ru: rus
+  ja: jpn
+  ko: kor
+  zh: chi
+  zho: chi
+  ar: ara
+  hi: hin
+  tr: tur
+  pl: pol
+  sv: swe
+  "no": nor
+  da: dan
+  fi: fin
+  el: gre
+  he: heb
+  hu: hun
+  ro: rum
+  ron: rum
+  cs: cze
+  ces: cze
+  th: tha
+  thai: tha
+  id: ind
+  uk: ukr
+
+# Orden preferido de pistas de audio/subtítulos en el mkv final (el resto, después)
+orden_idiomas: [spa, spal, cat, eng]
+
+# Código que se pasa a mkvmerge cuando no coincide con el canónico
+# (mkvmerge ≥ 50 admite etiquetas IETF como es-419 para el español latino)
+codigos_mkv:
+  spal: es-419

@@ -1,0 +1,83 @@
+# ============================================================================
+#  tracker.yaml — datos locales del tracker, torrent y plantillas de ficha.
+# ============================================================================
+
+tracker:
+  # Estos datos son locales. Complétalos en config/tracker.yaml, que Git ignora.
+  nombre: ""
+  announce: ""
+  # comentario del .torrent; {infohash} se sustituye por el hash del torrent
+  comentario: ""
+  sufijo: ""                 # nombre del .torrent: "<release><sufijo>.torrent"
+
+torrent:
+  created_by: "tociNoTool"
+  privado: true
+  # Campos que tu tracker añade dentro de ``info`` al aceptar un torrent.
+  # Déjalo vacío salvo que el tracker lo documente; afectan al infohash.
+  campos_info: {}
+  # tamaño de pieza (2^n) según el tamaño total en MB: hasta X MB → n
+  piezas: {100: 18, 1024: 19, 10240: 21, 51200: 22}
+  pieza_maxima: 23
+
+# Plantillas BBCode de la ficha (info). Placeholders: {titulo} {anio} {episodio}
+# {grupo} {usuario} {fuente_video} {fuente_audio} {audios} {subtitulos} {mediainfo}
+ficha:
+  pelicula: |
+    [color=red][b]{titulo} ({anio})[/b][/color]
+
+    Release: Grupo {grupo} @{usuario}
+
+    Fuente de video: {fuente_video}
+    Fuente de audio: {fuente_audio}
+    Fuente de subtitulos: {fuente_audio}
+
+    {audios}
+
+    {subtitulos}
+
+    [Spoiler]
+    {mediainfo}
+    [/Spoiler]
+  serie: |
+    [color=red][b]{titulo} {episodio}[/b][/color]
+
+    Release: Grupo {grupo} @{usuario}
+
+    Fuente de video: {fuente_video}
+    Fuente de audio: {fuente_audio}
+    Fuente de subtitulos: {fuente_audio}
+
+    {audios}
+
+    {subtitulos}
+
+    [Spoiler]
+    {mediainfo}
+    [/Spoiler]
+
+# ---------------------------------------------------------------------------
+# NFO de texto (<release>.nfo) por si el tracker migra a otro panel.
+# Mismos placeholders que la ficha, más {release} {enlaces} {resolucion} {codec_video}
+# ---------------------------------------------------------------------------
+nfo: |
+  {release}
+
+  Titulo:     {titulo} {anio}{episodio}
+  Grupo:      {grupo}
+  Uploader:   {usuario}
+  Fuente:     {fuente_video}
+  Video:      {resolucion} {codec_video}
+
+  {enlaces}
+
+  {audios}
+
+  {subtitulos}
+
+  ---- MediaInfo ----
+  {mediainfo}
+
+# Enlaces que se buscan tras el renombrado (info.txt y .nfo)
+enlaces:
+  filmaffinity: true      # buscar la ficha en FilmAffinity (scraping del buscador; sin API)

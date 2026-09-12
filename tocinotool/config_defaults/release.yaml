@@ -1,0 +1,21 @@
+# ============================================================================
+#  release.yaml — perfiles de origen y reglas comunes de preparación.
+# ============================================================================
+
+perfiles_release:
+  webdl:
+    nombre: "WEB-DL"
+    conservar_originales: true
+    una_pista_por_idioma: false
+  encode:
+    nombre: "Encode / MicroHD"
+    conservar_originales: false
+    una_pista_por_idioma: true
+  bluray:
+    nombre: "Blu-ray Rip / Remux"
+    conservar_originales: true
+    una_pista_por_idioma: false
+  manual:
+    nombre: "Manual / avanzado"
+    conservar_originales: true
+    una_pista_por_idioma: false

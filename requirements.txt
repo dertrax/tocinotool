@@ -1,0 +1,4 @@
+PyYAML>=6.0
+pymediainfo>=6.0
+torf>=4.2
+questionary>=2.0

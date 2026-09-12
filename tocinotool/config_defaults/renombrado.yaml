@@ -1,0 +1,54 @@
+# ============================================================================
+#  renombrado.yaml — FileBot: bases de datos, grupos, tipos de contenido y
+#  plantillas/expresiones de nombre.
+# ============================================================================
+
+# Renombrado con FileBot.
+# Las plantillas son expresiones de FileBot (Groovy entre llaves). Los
+# marcadores @vod@ @fuente@ @audio@ @video@ @grupo@ los rellena la tool.
+renombrado:
+  db_serie: TheTVDB           # alternativa: TheMovieDB::TV
+  db_pelicula: TheMovieDB
+  idioma: es                  # idioma de los títulos (se puede cambiar al confirmar)
+  grupos:
+    serie: TSeD
+    pelicula: TMd
+    pelicula_4k: T4Kd
+  # tipos de contenido → texto de fuente en el nombre. @bits@ y @hdr@ se
+  # sustituyen por las expresiones de abajo; {vf} lo resuelve FileBot (1080p…)
+  tipos:
+    serie_web:
+      web:    "WEB-DL@bits@@hdr@"
+      webrip: "WEBRip"
+      web4k:  "WEB-DL@bits@@hdr@"
+    serie_bluray:
+      blu:      "BluRay"
+      uhdremux: "UHDRemux@bits@@hdr@"
+    pelicula_web:
+      web:    "WEB-DL@bits@@hdr@"
+      webrip: "WEBRip"
+      web4k:  "WEB-DL@bits@@hdr@"
+    pelicula_bluray:
+      mhd:         "mHD.BluRay"
+      mhd1080:     "mHD@bits@.{vf}.BluRay"
+      muhd:        "mUHD.10Bits@hdr@.{vf}.BluRay"
+      4krip:       "{vf}.UHDRip@bits@@hdr@"
+      remux:       "{vf}.UHDRemux@bits@@hdr@"
+      bd1080_x265: "{vf}.BDRip@bits@"
+      bd1080_x264: "{vf}.BluRay"
+      bdremux:     "{vf}.BDRemux"
+      uhd1080:     "{vf}.UHDRip@bits@@hdr@"
+  tipos_4k: [4krip, remux, web4k, uhdremux]     # estos van al grupo pelicula_4k
+  # --- expresiones FileBot ---
+  expr_video: "{if (video[0].Encoded_Library_Name != null) video[0].Encoded_Library_Name else {if (video[0].format == 'AVC') 'H264' else if (video[0].format == 'HEVC') 'H265' else if (video[0].format == 'AV1') 'AV1'}}"
+  expr_hdr: "{if (video[0].HDR_Format != null && video[0].HDR_Format.contains('Dolby')) '.DoVi'}{if (video[0].hdr_format_commercial != null) '.' + {if (video[0].hdr_format_commercial.contains('/')) video[0].hdr_format_commercial.split('/')[1].strip() else video[0].hdr_format_commercial} else {if (video[0].colour_primaries == 'BT.2020') '.HDR' else ''}}"
+  expr_bits: "{if (video[0].BitDepth == '10') '.' + video[0].BitDepth + 'Bits'}"
+  expr_audio: "{if (audio[0].format == 'AC-3') 'DD' else if (audio[0].format == 'E-AC-3') 'DD+' else if (audio[0].format == 'AAC') 'AAC' else if (audio[0].format == 'MLP FBA') 'TrueHD' else if (audio[0].format == 'FLAC') 'FLAC' else if (audio[0].format == 'Opus') 'Opus' else if (audio[0].format == 'DTS') {if (audio[0].format_commercial != null && audio[0].format_commercial.contains('DTS-HD')) 'DTS-HD' else 'DTS'}}{if (audio[0].format_commercial != null && audio[0].format_commercial.contains('Atmos')) '.Atmos.' else if (audio[0].bit_rate == '768000') '.Atmos.'}{if (audio[0].channels == '2') '2.0' else if (audio[0].channels == '6') '5.1' else if (audio[0].channels == '8') '7.1'}"
+  # --- plantillas de nombre ---
+  plantilla_serie_web:        "{n.space('.')}.{s00e00}.{vf}.@vod@.@fuente@.@audio@.@video@-@grupo@"
+  plantilla_serie_bluray:     "{n.space('.')}.{s00e00}.{vf}.@fuente@.@audio@.@video@-@grupo@"
+  plantilla_pelicula_web:     "{n.space('.')}.{y}.{vf}.@vod@.@fuente@.@audio@.@video@-@grupo@"
+  plantilla_pelicula_bluray:  "{n.space('.')}.{y}.@fuente@.@audio@.@video@-@grupo@"
+  # carpeta de temporada completa (se antepone a la plantilla de episodio)
+  carpeta_temporada_web:      "{n.space('.')}{regular ? '.S' + s.pad(2) : '.S00'}.{vf}.@vod@.@fuente@.@audio@.@video@-@grupo@"
+  carpeta_temporada_bluray:   "{n.space('.')}{regular ? '.S' + s.pad(2) : '.S00'}.{vf}.@fuente@.@audio@.@video@-@grupo@"

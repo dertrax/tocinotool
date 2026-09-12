@@ -1,0 +1,30 @@
+# ============================================================================
+#  tool.yaml — lo particular de este PC / usuario. No se comparte.
+# ============================================================================
+
+usuario: ""            # tu usuario en el tracker (lo pide el asistente)
+
+mostrar_comandos: false   # true = imprime cada línea de comando (ffmpeg, mkvmerge…) para depurar
+
+instalacion:
+  completado: false
+  fecha: ""
+  filebot: pendiente  # pendiente o licenciado; no bloquea el resto de la tool
+
+# Enlaces oficiales centralizados; no repartir URLs en los módulos.
+enlaces_externos:
+  ffmpeg_descarga: "https://ffmpeg.org/download.html"
+  mkvtoolnix_descarga: "https://mkvtoolnix.download/downloads.html"
+  mediainfo_descarga: "https://mediaarea.net/MediaInfo/Download/Windows"
+  filebot_descarga: "https://www.filebot.net/download.html"
+  filebot_compra: "https://www.filebot.net/purchase.html"
+  filebot_activacion: "https://www.filebot.net/activate.html"
+
+# Rutas manuales a herramientas. Vacío = buscar en PATH y, en Windows, en binaries/
+herramientas:
+  ffmpeg: ""
+  ffprobe: ""
+  mkvmerge: ""
+  mkvpropedit: ""
+  mediainfo: ""
+  filebot: ""

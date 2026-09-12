@@ -1,0 +1,23 @@
+# ============================================================================
+#  plataformas.yaml — tag de plataforma → nombre completo mostrado.
+#  Solo contiene los tags finales usados en los nombres de release.
+# ============================================================================
+
+plataformas:
+  HMAX: HBO Max
+  D+: Discovery+
+  NF: Netflix
+  FO: FlixOlé
+  RED: YouTube Premium
+  AMZN: Amazon
+  Disney: Disney+
+  HotStar: HotStar
+  MT: MitelePlus
+  MA: Movies Anywhere
+  A3P: Atresplayer
+  SkySHO: SkyShowtime
+  M+: Movistar+
+  FLMN: Filmin
+  ATVP: Apple TV+
+  CRUNCHY: Crunchyroll
+  HULU: Hulu
