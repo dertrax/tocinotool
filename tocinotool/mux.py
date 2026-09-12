@@ -37,6 +37,7 @@ class PistaPlan:
     incluir: bool = True
     detalle: str = ""         # codec / canales / kbps
     origen: str = ""          # nombre corto del fichero
+    aviso_taggeo: str = ""    # aviso de idioma que el usuario debe revisar
     orden_original: int = 0
     pista: Optional[probe.Pista] = None   # datos de ffprobe (codec, canales, kbps…)
 
@@ -235,6 +236,11 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
                                for pp, _ in grupo), default=0)
             for pp, variante in zip([g[0] for g in grupo], _subs.asignar_variantes([g[1] for g in grupo])):
                 pp.idioma = variante
+                if variante == "spal":
+                    pp.aviso_taggeo = (
+                        "El origen la marcaba como Castellano/es-ES, pero el texto parece latino. "
+                        "Revisa el taggeo si no procede de Latinoamérica."
+                    )
                 # Algunas plataformas dejan ``forced=0`` incluso en pistas de
                 # carteles. Se compara el número de cues con otra pista
                 # española completa para no confundirla con diálogos cortos.
@@ -254,6 +260,7 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
             continue
         resto = f.name[len(video.stem):-len(f.suffix)] if f.name.lower().startswith(video.stem.lower()) else f.stem
         idioma, subtipo = _idioma_y_subtipo_de_nombre(resto, cfg)
+        idioma_origen = idioma
         ext = f.suffix.lower().lstrip(".")
         # VobSub se entrega a mkvmerge mediante el .idx; su .sub binario debe
         # acompañarlo si apartamos los originales antes de crear el MKV.
@@ -268,6 +275,12 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
                 texto = _subs.leer_texto(listo)
                 detectado = _subs.detectar_idioma(texto) if idioma == "und" else (_subs.detectar_variante_es(texto) or "spa")
                 idioma = detectado or idioma
+        aviso_taggeo = ""
+        if idioma_origen == "spa" and idioma == "spal":
+            aviso_taggeo = (
+                "El nombre la marcaba como Castellano/es-ES, pero el texto parece latino. "
+                "Revisa el taggeo si no procede de Latinoamérica."
+            )
         # El formato ASS contiene estilos, posiciones y carteles que se perderían
         # en SRT. Para anime se incluyen el ASS original y el SRT limpio. Si el
         # ASS completo contiene carteles, se extraen también como SRT forzado.
@@ -296,7 +309,8 @@ def construir_plan(video: Path, salida: Path, cfg, sueltos: List[Path] = (), con
             original = f if ruta != f and f not in rutas_fisicas else None
             fi = anadir_fichero(ruta, original=original)
             etiqueta = f.name + (f" ({proceso})" if proceso else "")
-            anadir(fi, 0, p, idioma, subtipo_ruta, True, etiqueta)
+            pp = anadir(fi, 0, p, idioma, subtipo_ruta, True, etiqueta)
+            pp.aviso_taggeo = aviso_taggeo
 
     completar_plan(plan, cfg)
     return plan
@@ -386,6 +400,10 @@ def mostrar_plan(plan: Plan, cfg) -> None:
         cabeceras.append("de")
     ui.tabla(cabeceras, filas)
     ui.info("✖ = se excluye del mkv final")
+    for i, p in enumerate(plan.pistas, 1):
+        if p.incluir and p.idioma == "spal" and p.aviso_taggeo:
+            ui.aviso(f"Pista {i}: {p.aviso_taggeo}")
+            ui.info("Si no es latino, responde No a «¿Correcto?» y usa «i · cambiar idioma» en esa pista.")
 
 
 def editar_plan(plan: Plan, cfg) -> None:

@@ -1,4 +1,4 @@
-# tociNoTool v2.1.3
+# tociNoTool v2.1.4
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -119,6 +119,10 @@ pero no se usa scraping ni una API externa obligatoria.
 - Si un MP4 trae dos subtítulos españoles sin flag `forced`, el muxer compara
   sus cues: una pista muy corta frente a otra completa se propone como
   forzada. Es una regla conservadora y el plan sigue siendo editable.
+- Si una plataforma etiqueta una pista como `spa`/`es-ES` pero su texto se
+  detecta como latino, el plan muestra un aviso. Antes de confirmar puedes
+  responder **No**, elegir la pista y usar **i — cambiar idioma** para dejarla
+  como Castellano si la detección no corresponde.
 - El orden de subtítulos es: SRT forzado, SRT completo, ASS forzado, ASS
   completo y después otros formatos compatibles.
 

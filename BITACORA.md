@@ -4,6 +4,13 @@ Historial cronológico de cambios. Para el manual público consultar
 [README.md](README.md); para el estado técnico vigente, [MEMORIA.md](MEMORIA.md).
 Última actualización: 2026-09-12.
 
+## 2026-09-12 — Publicación 2.1.4
+
+- Aviso de taggeo: cuando el origen declara un subtítulo como `spa`/`es-ES`
+  pero el análisis lo clasifica como español latino, el plan lo muestra antes
+  de confirmar y explica cómo corregir el idioma manualmente. No afecta a
+  pistas ya identificadas explícitamente como `es-419`.
+
 ## 2026-09-12 — Publicación 2.1.3
 
 - WebVTT de Netflix: conversión propia a SRT válido. Conserva texto y cursiva,

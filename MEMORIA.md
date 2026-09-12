@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.1.3
+# Memoria del proyecto — tociNoTool v2.1.4
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -24,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.1.3-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.1.4-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos
@@ -88,6 +88,9 @@ asistente permite reintentar, descargar, indicar ruta o posponer.
   compara los cues de ambas; solo marca forzada una candidata de hasta 80 cues
   y al menos cinco veces menor que otra española completa. El usuario puede
   modificar el plan antes del mux.
+- Si una pista inicialmente `spa`/`es-ES` se clasifica por texto como `spal`,
+  `PistaPlan.aviso_taggeo` muestra una advertencia al presentar el plan. No
+  bloquea el flujo: el usuario puede corregirla con `i · cambiar idioma`.
 - Un MKV suelto limita el análisis a ese contenedor.
 - `originales/` nunca se elimina automáticamente.
 
