@@ -1,4 +1,4 @@
-# tociNoTool v2.1.1
+# tociNoTool v2.2.0
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -88,11 +88,23 @@ suelto. Con un MKV procesa exclusivamente ese contenedor.
 3. Convertir los audios necesarios a AC3.
 4. Ejecutar el muxer: ordena, nombra y marca las pistas.
 5. Verificar el MKV final.
-6. Renombrar con FileBot, si tiene una licencia válida.
+6. Renombrar con FileBot, si tiene una licencia válida. Anime con numeración
+   continua (por ejemplo, `S02E25…S02E48`): si FileBot reparte los capítulos
+   en otras temporadas, la tool repite la prueba limitada a la temporada del
+   nombre (`S02E25 → S02E01`).
 7. Crear torrent, ficha, `.nfo`, `info.txt` y capturas.
 
-Los originales quedan en `originales/`. Los derivados van a `temporal/` y solo
+Los originales quedan en `originales/` después de validar el MKV final. Los derivados van a `temporal/` y solo
 se limpian tras una verificación correcta.
+
+### Series sin FileBot
+
+La opción **8 — Parser de series** funciona sin FileBot: detecta `SxxExx` y
+`1x02`, muestra un resumen de correlación (primer archivo, último y rango) y
+avisa de episodios faltantes sin renumerarlos. Si los nombres no aportan datos
+suficientes, permite indicar nombre de serie, temporada y primer episodio.
+Una URL de IMDb, TMDb, TheTVDB u otro sitio puede guardarse como referencia,
+pero no se usa scraping ni una API externa obligatoria.
 
 ### Audio y subtítulos
 
@@ -114,6 +126,7 @@ se limpian tras una verificación correcta.
 | 4 | Renombrar con FileBot. |
 | 5 | Crear `.torrent`. |
 | 6 | Generar ficha BBCode, `.nfo` e `info.txt`. |
+| 8 | Parser de series y correlación sin FileBot. |
 | v | Verificar pistas, flags, duración, título y adjuntos. |
 | 7 | Limpieza de archivos. |
 | 9 | Juntar vídeo de un MKV con audios/subtítulos de otro. |

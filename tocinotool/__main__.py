@@ -15,6 +15,7 @@ OPCIONES = [
     ("4", "Renombrar con FileBot"),
     ("5", "Crear .torrent"),
     ("6", "Info para el tracker: ficha .txt (BBCode), .nfo e info.txt con enlaces"),
+    ("8", "Parser de series: temporadas, episodios y correlación (sin FileBot)"),
     ("v", "Verificar mkv (directrices: idiomas, orden, nombres, default, duración)"),
     ("", ""),
     ("7", "Limpieza de archivos"),
@@ -56,6 +57,11 @@ def menu(cfg) -> None:
             elif op == "6":
                 from . import ficha
                 carpeta = ficha.flujo(cfg) or carpeta
+            elif op == "8":
+                from . import series
+                plan = series.flujo(cfg, carpeta)
+                if plan and plan.episodios:
+                    carpeta = plan.episodios[0].archivo.parent
             elif op == "7":
                 from . import limpiar
                 carpeta = limpiar.menu(cfg) or carpeta

@@ -230,10 +230,7 @@ def procesar_grupos(cfg, grupos: list["ReleaseGroup"], perfil: str, revisar_plan
                 mux.editar_plan(plan, cfg)
     salidas = []
     for i, plan in enumerate(planes, 1):
-        base = plan.ficheros[0].parent
-        plan.ficheros = mux._apartar(plan.ficheros, base)
-        mux._apartar(plan.extra_apartar, base)
-        salidas.append(mux.ejecutar_plan(plan, cfg, f"[{i}/{len(planes)}] "))
+        salidas.append(mux.ejecutar_plan_con_originales(plan, cfg, f"[{i}/{len(planes)}] "))
     return salidas
 
 
@@ -358,10 +355,7 @@ def procesar_carpeta(cfg, carpeta: Path, preguntar_borrado: bool = True, modo: O
     salidas = []
     ui.seccion(f"Muxeando {len(planes)} fichero(s)")
     for i, plan in enumerate(planes, 1):
-        base = plan.ficheros[0].parent
-        plan.ficheros = mux._apartar(plan.ficheros, base)
-        mux._apartar(plan.extra_apartar, base)
-        salidas.append(mux.ejecutar_plan(plan, cfg, f"[{i}/{len(planes)}] "))
+        salidas.append(mux.ejecutar_plan_con_originales(plan, cfg, f"[{i}/{len(planes)}] "))
     ui.info("Los ficheros de origen se conservan en originales/ (bórralos tú cuando hayas comprobado el release).")
     return salidas
 

@@ -11,7 +11,7 @@ config (serie → TSeD, película → TMd, 4K → T4Kd) y se puede cambiar a man
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from . import tools, ui
 
@@ -27,6 +27,7 @@ class Opciones:
     db: str = ""
     idioma: str = "es"
     id_elem: str = ""          # id de TheTVDB/TMDB si hay ambigüedad
+    temporada: int = 0         # limitar la búsqueda a esta temporada (anime con numeración continua)
 
 
 def _preguntar_opciones(cfg, entrada: Path, previas: Optional[Opciones]) -> Opciones:
@@ -105,10 +106,55 @@ def comando_filebot(cfg, op: Opciones, entradas: List[Path], formato: str, accio
            "-non-strict", "--lang", op.idioma, "--action", accion]
     if op.id_elem:
         cmd += ["--q", op.id_elem]
+    if op.serie and op.temporada:
+        # Anime (Crunchyroll…): los ficheros van S02E25…S02E48 (numeración continua)
+        # y FileBot los reparte por temporadas que no son. Limitando la búsqueda a
+        # la temporada, FileBot casa por número absoluto: S02E25 → S02E01.
+        cmd += ["--filter", f"s == {op.temporada}"]
     return cmd
 
 
 _RE_EPISODIO = re.compile(r"S\d{1,2}E\d{1,3}|\b\d{1,2}x\d{2}\b", re.IGNORECASE)
+_RE_TEMPORADA_NOMBRE = re.compile(r"S(\d{1,2})E\d{1,3}|\b(\d{1,2})x\d{2}\b", re.IGNORECASE)
+
+
+def _temporada_nombre(nombre: str) -> int:
+    m = _RE_TEMPORADA_NOMBRE.search(nombre)
+    return int(m.group(1) or m.group(2)) if m else 0
+
+
+def _mkvs(entradas: List[Path]) -> List[Path]:
+    return [f for e in entradas for f in ([e] if e.is_file() else sorted(e.rglob("*.mkv")))]
+
+
+def temporadas_de_nombres(entradas: List[Path]) -> Dict[int, List[Path]]:
+    """{temporada: [mkv]} según el SxxExx de cada nombre (S02E25 → 2).
+    Los mkv sin temporada en el nombre no entran."""
+    grupos: Dict[int, List[Path]] = {}
+    for f in _mkvs(entradas):
+        t = _temporada_nombre(f.name)
+        if t:
+            grupos.setdefault(t, []).append(f)
+    return grupos
+
+
+def temporada_de_nombres(entradas: List[Path]) -> int:
+    """Temporada única que dicen los nombres; 0 si no hay o si hay varias."""
+    grupos = temporadas_de_nombres(entradas)
+    return next(iter(grupos)) if len(grupos) == 1 else 0
+
+
+def _desajustes_temporada(resultados: List[tuple]) -> List[tuple]:
+    """Ficheros cuyo nombre dice una temporada y FileBot los ha puesto en otra:
+    numeración continua de anime (Crunchyroll S02E25 → FileBot S01E01)."""
+    malos = []
+    for origen, destino in resultados:
+        t_origen, t_destino = _temporada_nombre(origen), _temporada_nombre(Path(destino).name)
+        if t_origen and t_destino and t_origen != t_destino:
+            malos.append((origen, destino))
+    return malos
+
+
 _RE_TEMPORADA_DIR = re.compile(r"\bS\d{1,2}\b|temporada|season", re.IGNORECASE)
 _RE_WEB = re.compile(r"WEB-?DL|WEB-?Rip|\bWEB\b", re.IGNORECASE)
 _RE_DISCO = re.compile(r"BluRay|Blu-Ray|BDRip|BDRemux|Remux|UHDRip|\bBD\b", re.IGNORECASE)
@@ -208,56 +254,97 @@ _RE_RESULTADO = re.compile(r"^\[(TEST|MOVE|RENAME|COPY)\] from \[(.*)\] to \[(.*
 def _ejecutar_filebot(cmd: List[str]) -> int:
     """Ejecuta FileBot mostrando solo lo útil: cada 'origen → destino' y los
     errores. Devuelve cuántos ficheros ha procesado (0 = no ha encontrado nada)."""
+    n, resultados = _ejecutar_filebot_detalle(cmd)
+    _mostrar_resultados(resultados)
+    return n
+
+
+def _ejecutar_filebot_detalle(cmd: List[str]) -> tuple:
+    """(nº procesados, [(nombre origen, destino relativo)]) sin mostrar nada salvo errores."""
     # FileBot para Windows escribe su salida de consola en cp1252. Sin indicar
     # esta codificación, las tildes de las rutas se reemplazan por � al mostrar
     # la prueba, aunque el nombre que FileBot aplica sea correcto.
     codificacion = "cp1252" if tools.ES_WINDOWS else "utf-8"
     r = tools.ejecutar(cmd, capturar=True, comprobar=False, codificacion=codificacion)
     salida = (r.stdout or "") + (r.stderr or "")
-    procesados = 0
     resultados = []
-    episodios = []
     for linea in salida.splitlines():
         m = _RE_RESULTADO.match(linea.strip())
         if m:
-            procesados += 1
             origen, destino = Path(m.group(2)), Path(m.group(3))
             try:
                 mostrado = destino.relative_to(origen.parent)   # incluye la carpeta de temporada si la crea
             except ValueError:
                 mostrado = destino.name
             resultados.append((origen.name, str(mostrado)))
-            ep = _RE_EPISODIO.search(destino.name)
-            if ep:
-                episodios.append(ep.group(0).upper())
         elif any(x in linea for x in ("License", "Failure", "Exception", "No match", "Failed", "Error")):
             ui.aviso(linea.strip())
     if tools.DETALLADO:
         print(ui.gris(salida))
-    elif procesados <= 3:
+    return len(resultados), resultados
+
+
+def _mostrar_resultados(resultados: List[tuple]) -> None:
+    """Hasta tres: todos. Más: cantidad, primero y rango de episodios (por temporada)."""
+    if tools.DETALLADO:
+        return
+    if len(resultados) <= 3:
         for origen, destino in resultados:
             print(f"   {origen}")
             print(f"     → {destino}")
-    elif resultados:
-        ui.info(f"{procesados} archivos detectados.")
-        ui.info("Primer resultado:")
-        print(f"     {resultados[0][0]}")
-        print(f"       → {resultados[0][1]}")
-        if episodios:
-            ui.info(f"Rango detectado: {episodios[0]} → {episodios[-1]}")
-        ui.info("Activa 'mostrar comandos técnicos' si necesitas ver el detalle completo.")
-    return procesados
+        return
+    ui.info(f"{len(resultados)} archivos detectados.")
+    ui.info("Primer resultado:")
+    print(f"     {resultados[0][0]}")
+    print(f"       → {resultados[0][1]}")
+    episodios = [m.group(0).upper() for m in (_RE_EPISODIO.search(Path(d).name) for _, d in resultados) if m]
+    if episodios:
+        por_temporada: Dict[int, List[str]] = {}
+        for e in episodios:
+            por_temporada.setdefault(_temporada_nombre(e), []).append(e)
+        rangos = [f"{v[0]} → {v[-1]}" for _, v in sorted(por_temporada.items())]
+        ui.info("Rango detectado: " + " · ".join(rangos))
+    ui.info("Activa 'mostrar comandos técnicos' si necesitas ver el detalle completo.")
+
+
+def _probar(cfg, op: Opciones, trabajos: List[tuple], formato: str, accion: str) -> tuple:
+    """Ejecuta FileBot una vez por trabajo (entradas, temporada) y junta los resultados."""
+    total, resultados = 0, []
+    for entradas, temporada in trabajos:
+        op.temporada = temporada
+        n, r = _ejecutar_filebot_detalle(comando_filebot(cfg, op, entradas, formato, accion))
+        total += n
+        resultados += r
+    return total, resultados
 
 
 def _probar_y_mover(cfg, op: Opciones, entradas: List[Path], referencia: Path, formato: str) -> Optional[Opciones]:
+    # Cada trabajo es (entradas, temporada a la que se limita FileBot). Lo normal
+    # es uno solo sin límite; el anime con numeración continua los separa por temporada.
+    trabajos: List[tuple] = [(entradas, op.temporada)]
+    corregido = False
     while True:
-        n = _ejecutar_filebot(comando_filebot(cfg, op, entradas, formato, "test"))
+        n, resultados = _probar(cfg, op, trabajos, formato, "test")
+        # Anime con numeración continua (Crunchyroll: S02E25…S02E48): el nombre dice
+        # una temporada y FileBot lo pone en otra. Se detecta por fichero, se separan
+        # las temporadas y se repite la prueba limitando cada una; el usuario solo confirma.
+        if op.serie and not corregido and _desajustes_temporada(resultados):
+            grupos = temporadas_de_nombres(entradas)
+            if grupos:
+                corregido = True
+                trabajos = [(ficheros, t) for t, ficheros in sorted(grupos.items())]
+                temporadas = ", ".join(f"S{t:02d}" for t in sorted(grupos))
+                ui.aviso(f"FileBot ha cambiado de temporada capítulos que por nombre son de {temporadas}: "
+                         "numeración continua (típica de anime). Se repite limitando a esa(s) temporada(s).")
+                continue
+        _mostrar_resultados(resultados)
         if n == 0:
             ui.aviso("FileBot no ha encontrado coincidencia (o ha fallado).")
         if ui.preguntar_sn("¿El resultado es correcto?", n > 0):
             break
         accion = ui.preguntar_opcion("¿Qué probamos?", [
             ("id", "indicar el id de TheTVDB/TheMovieDB"),
+            ("temp", "limitar a una temporada (anime con numeración continua: S02E25 → S02E01)"),
             ("en", "buscar en inglés" if op.idioma != "en" else "buscar en español"),
             ("db", "cambiar base de datos (TheTVDB ↔ TheMovieDB::TV)"),
             ("op", "cambiar las opciones (fuente, tipo, grupo…)"),
@@ -265,17 +352,24 @@ def _probar_y_mover(cfg, op: Opciones, entradas: List[Path], referencia: Path, f
         ], defecto="id")
         if accion == "id":
             op.id_elem = ui.preguntar("Id", obligatorio=True)
+        elif accion == "temp":
+            t = ui.preguntar_entero("Temporada real de estos capítulos",
+                                    defecto=temporada_de_nombres(entradas) or None, minimo=0, maximo=99)
+            trabajos, corregido = [(entradas, t)], True
         elif accion == "en":
             op.idioma = "en" if op.idioma != "en" else "es"
         elif accion == "db":
             op.db = "TheMovieDB::TV" if op.db == "TheTVDB" else "TheTVDB"
         elif accion == "op":
+            id_elem = op.id_elem
             op = _preguntar_opciones(cfg, referencia, op)
+            op.id_elem = id_elem
             formato = construir_formato(cfg, op, referencia)
         else:
             return op
 
-    _ejecutar_filebot(comando_filebot(cfg, op, entradas, formato, "move"))
+    _, hechos = _probar(cfg, op, trabajos, formato, "move")
+    _mostrar_resultados(hechos)
     for e in entradas:
         if e.is_dir() and e.exists() and not any(e.iterdir()):
             e.rmdir()

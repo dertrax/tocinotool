@@ -13,8 +13,9 @@ del flujo ya no pregunta salvo para supervisar:
   * plataforma, si es WEB-DL (del listado del config; siempre se pregunta)
 
 Después:  convertir → muxer (plan a confirmar) → verificar → renombrar (nombre a
-confirmar) → torrent → ficha → capturas, todo automático. Los residuos
-(temporal/, originals/) se borran solos si la verificación es correcta.
+confirmar) → torrent → ficha → capturas, todo automático. Los derivados de
+``temporal/`` se limpian tras verificar; las fuentes se conservan en
+``originales/`` solo después de validar el MKV final.
 """
 import shutil
 from dataclasses import dataclass, field
@@ -164,6 +165,10 @@ def flujo(cfg, carpeta: Optional[Path] = None) -> Optional[Path]:
             ("webdl", "WEB-DL"), ("encode", "Encode / MicroHD"), ("bluray", "Blu-ray Rip / Remux")
         ], defecto=origen)
     ctx = preguntar_contexto(cfg, raiz, ws.grupos, origen)
+    if sin_licencia_filebot and ctx.contenido != "pelicula":
+        from . import series
+        ui.info("FileBot no disponible: parser propio ACTIVO para analizar la correlación.")
+        series.flujo(cfg, carpeta, pedir_fallback=True)
 
     # Estado de las pistas: si el mkv viene ya preparado (p. ej. de "Juntar" con un
     # release anterior) no hay nada que convertir ni muxear.

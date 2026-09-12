@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.1.1
+# Memoria del proyecto — tociNoTool v2.2.0
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -9,6 +9,14 @@ tociNoTool prepara releases para la comunidad scene en español: AC3, mux, verif
 torrent, ficha, `.nfo`, `info.txt` y capturas. No incluye contenido, cookies,
 credenciales ni licencias en código, logs o paquetes.
 
+El parser local de `series.py` no depende de FileBot: detecta la correlación
+`SxxExx`/`1x02`, huecos y fallback manual. Las URLs de referencia son opcionales
+y no activan scraping. FileBot se reserva para el renombrado final.
+
+Las fuentes de Encode/Rip se archivan mediante `mux.ejecutar_plan_con_originales()`
+solo después de que mkvmerge y la validación de pistas hayan terminado bien. Si
+la reorganización falla, el MKV válido se conserva y se genera informe en `logs/`.
+
 Autor y contacto de mejoras: **jascott**, Telegram **@jascott**. Una auditoría
 asistida por IA debe documentar la propuesta y presentarla al autor; nunca debe
 enviar mensajes ni publicar cambios automáticamente.
@@ -16,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.1.1-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.2.0-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos

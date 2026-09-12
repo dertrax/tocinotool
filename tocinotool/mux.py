@@ -454,21 +454,85 @@ def ejecutar_plan(plan: Plan, cfg, etiqueta: str = "") -> Path:
     return plan.salida
 
 
-def _apartar(rutas: List[Path], carpeta: Path) -> List[Path]:
-    """Mueve los ficheros de origen a carpeta/originales para que la salida no los
-    pise. NUNCA se borran automáticamente: el usuario los quita cuando haya
-    comprobado el release."""
-    destino = carpeta / "originales"
-    destino.mkdir(exist_ok=True)
-    nuevas = []
-    for r in rutas:
-        if r.parent == carpeta:
-            nuevo = destino / r.name
-            shutil.move(str(r), nuevo)
-            nuevas.append(nuevo)
-        else:
-            nuevas.append(r)
-    return nuevas
+def _fuentes_reales(plan: Plan) -> List[Path]:
+    """Entradas físicas que hay que conservar, sin derivados de ``temporal``."""
+    vistas, fuentes = set(), []
+    for ruta in [*plan.ficheros, *plan.extra_apartar]:
+        try:
+            clave = ruta.resolve()
+        except OSError:
+            clave = ruta
+        if clave in vistas or not ruta.exists() or "temporal" in {p.lower() for p in ruta.parts}:
+            continue
+        vistas.add(clave)
+        fuentes.append(ruta)
+    return fuentes
+
+
+def _destino_original(ruta: Path) -> Path:
+    """Destino sin sobrescrituras: conserva cada episodio junto a sus fuentes."""
+    carpeta = ruta.parent / "originales"
+    carpeta.mkdir(exist_ok=True)
+    candidato = carpeta / ruta.name
+    n = 1
+    while candidato.exists():
+        candidato = carpeta / f"{ruta.stem}.{n}{ruta.suffix}"
+        n += 1
+    return candidato
+
+
+def _archivar_fuentes(rutas: List[Path]) -> List[tuple[Path, Path]]:
+    """Mueve, nunca borra, las fuentes ya usadas tras validar el MKV."""
+    movimientos = []
+    for ruta in rutas:
+        destino = _destino_original(ruta)
+        shutil.move(str(ruta), str(destino))
+        movimientos.append((ruta, destino))
+    return movimientos
+
+
+def ejecutar_plan_con_originales(plan: Plan, cfg, etiqueta: str = "") -> Path:
+    """Mux seguro: valida primero y solo entonces archiva las fuentes.
+
+    Si el nombre de salida coincide con el contenedor de entrada, se genera en
+    ``temporal/``. Así un error de mux o validación deja intactas las fuentes.
+    """
+    from . import diagnostico
+
+    salida_final = plan.salida
+    fuentes = _fuentes_reales(plan)
+    conflicto = any(ruta.resolve() == salida_final.resolve() for ruta in fuentes)
+    salida_temporal = None
+    if conflicto:
+        temporal = salida_final.parent / "temporal"
+        temporal.mkdir(exist_ok=True)
+        salida_temporal = temporal / f"{salida_final.stem}.final.mkv"
+        if salida_temporal.exists():
+            raise RuntimeError(f"Ya existe una salida temporal: {salida_temporal.name}. Revísala antes de continuar.")
+        plan.salida = salida_temporal
+    try:
+        salida_validada = ejecutar_plan(plan, cfg, etiqueta)
+    finally:
+        plan.salida = salida_final
+
+    try:
+        movimientos = _archivar_fuentes(fuentes)
+    except OSError as exc:
+        informe = diagnostico.crear_informe_error(exc, cfg=cfg, modulo="mux", paso="archivar originales",
+                                                    detalle="No se han podido mover todos los archivos fuente.")
+        ui.aviso("Release generado correctamente, pero no se pudieron reorganizar todos los originales.")
+        if informe:
+            ui.info(f"Informe: {informe}")
+        if salida_temporal:
+            ui.info(f"El MKV validado queda en temporal/: {salida_validada.name}")
+        return salida_validada
+
+    if salida_temporal:
+        shutil.move(str(salida_temporal), str(salida_final))
+        salida_validada = salida_final
+    if movimientos:
+        ui.info(f"{len(movimientos)} fuente(s) conservada(s) en originales/.")
+    return salida_validada
 
 
 def procesar_carpeta(cfg, carpeta: Path, carpeta_sueltos: Optional[Path] = None,
@@ -522,10 +586,7 @@ def procesar_carpeta(cfg, carpeta: Path, carpeta_sueltos: Optional[Path] = None,
     salidas = []
     ui.seccion(f"Muxeando {len(planes)} fichero(s)")
     for i, plan in enumerate(planes, 1):
-        base = plan.ficheros[0].parent
-        plan.ficheros = _apartar(plan.ficheros, base)
-        _apartar(plan.extra_apartar, base)
-        salidas.append(ejecutar_plan(plan, cfg, f"[{i}/{len(planes)}] "))
+        salidas.append(ejecutar_plan_con_originales(plan, cfg, f"[{i}/{len(planes)}] "))
     ui.info("Los ficheros de origen se conservan en originales/ (bórralos tú cuando hayas comprobado el release).")
     return salidas
 

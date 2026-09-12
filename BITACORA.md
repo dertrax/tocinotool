@@ -4,6 +4,16 @@ Historial cronológico de cambios. Para el manual público consultar
 [README.md](README.md); para el estado técnico vigente, [MEMORIA.md](MEMORIA.md).
 Última actualización: 2026-09-12.
 
+## 2026-09-12 — Publicación 2.2.0
+
+- Parser local de series independiente de FileBot: episodios `SxxExx`/`1x02`,
+  resumen compacto, huecos y fallback manual con URL de referencia opcional.
+- El mux valida primero y mueve después las fuentes realmente usadas a
+  `originales/`; una salida que colisiona con la fuente se construye en
+  `temporal/` hasta finalizar con seguridad.
+- Renombrado de anime con numeración continua: si FileBot cambia la temporada,
+  se repite el test limitado con `--filter "s == N"` antes de solicitar confirmación.
+
 ## 2026-09-12 — Publicación 2.1.1
 
 - Se publica la corrección para trackers que añaden metadatos al diccionario
