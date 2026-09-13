@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.1.8
+# Memoria del proyecto — tociNoTool v2.1.9
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -24,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.1.8-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.1.9-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos
@@ -122,15 +122,14 @@ multiplexa y verifica, y se detiene antes del renombrado automático.
 
 Alternativa: renombrar manualmente y usar la opción 6. Si faltan metadatos,
 `metadatos.pedir_enlace_manual()` solicita TMDb para película o IMDb para serie,
-valida el enlace y lo añade a ficha, NFO XML e `info.txt`. Es opcional.
+valida el enlace y lo añade a ficha, NFO de texto e `info.txt`. Es opcional.
 
-`ficha.py` genera NFO XML de identificación: película = `<movie>` junto al
-release; capítulo = `<episodedetails>` junto al MKV + `tvshow.nfo`; temporada
-= `tvshow.nfo`, `season.nfo` y un sidecar por episodio. Los IDs de FileBot
-son de película o serie: los de una serie solo van en `tvshow.nfo`, nunca se
-declaran erróneamente como IDs de episodio. La antigua plantilla de NFO de
-texto se migra automáticamente a `nfo.identificacion: true`; la ficha BBCode
-sigue siendo el documento legible para el tracker.
+`ficha.py` genera un único `<release>.nfo` textual con la plantilla
+`tracker.nfo`: release, título, grupo, fuente, vídeo, enlaces, audios,
+subtítulos y MediaInfo. Se escribe en UTF-8 y no incluye `Uploader`. Las
+instalaciones 2.1.7/2.1.8 que contenían `nfo.identificacion` se migran a esta
+plantilla; las anteriores conservan su plantilla, eliminando solo la línea
+`Uploader:` si existía.
 
 La licencia es personal, válida para varios equipos del mismo usuario; nunca se
 presenta como compartible entre personas.
@@ -156,7 +155,7 @@ presenta como compartible entre personas.
 2. Probar launcher sin configuración y asistente con FileBot presente, ausente y
    sin licencia.
 3. Probar ficha sin metadatos: TMDb para película e IMDb para serie; comprobar
-   el NFO de película, capítulo y temporada completa.
+   un único NFO textual UTF-8 sin `Uploader:` para película, capítulo y temporada.
 4. Probar WEB-DL con ASS interno y externo (SRT + ASS, y carteles solo si son
    detectables), un SRT único con carteles en mayúsculas y un SRT con un
    forzado explícito; comprobar que PGS/VobSub sin SRT detiene el mux con un aviso.

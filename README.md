@@ -1,4 +1,4 @@
-# tociNoTool v2.1.8
+# tociNoTool v2.1.9
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -92,7 +92,7 @@ suelto. Con un MKV procesa exclusivamente ese contenedor.
    continua (por ejemplo, `S02E25…S02E48`): si FileBot reparte los capítulos
    en otras temporadas, la tool repite la prueba limitada a la temporada del
    nombre (`S02E25 → S02E01`).
-7. Crear torrent, ficha, NFO de identificación, `info.txt` y capturas.
+7. Crear torrent, ficha, NFO de texto para el panel, `info.txt` y capturas.
 
 Los originales quedan en `originales/` después de validar el MKV final. Los derivados van a `temporal/` y solo
 se limpian tras una verificación correcta.
@@ -154,7 +154,7 @@ pero no se usa scraping ni una API externa obligatoria.
 | 3 | Muxer: ordenar, nombrar y marcar pistas. |
 | 4 | Renombrar con FileBot. |
 | 5 | Crear `.torrent`. |
-| 6 | Generar ficha BBCode, NFO de identificación e `info.txt`. |
+| 6 | Generar ficha BBCode, NFO de texto e `info.txt`. |
 | 8 | Parser de series y correlación sin FileBot. |
 | v | Verificar pistas, flags, duración, título y adjuntos. |
 | 7 | Limpieza de archivos. |
@@ -183,30 +183,19 @@ La URL announce y el comentario del tracker se rellenan únicamente en
 | `release.yaml` | Perfiles WEB-DL, Encode y Blu-ray. |
 | `plataformas.yaml` | Tags de plataforma y sus nombres. |
 | `renombrado.yaml` | Plantillas y grupos de FileBot. |
-| `tracker.yaml` | Tracker, torrent, ficha BBCode y NFO de identificación. |
+| `tracker.yaml` | Tracker, torrent, ficha BBCode y plantilla del NFO. |
 | `capturas.yaml` | Capturas y tonemapping. |
 
 `tocinotool/es.csv` solo traduce etiquetas de MediaInfo para la ficha; no define
 idiomas, codecs ni reglas del muxer.
 
-### NFO de identificación
+### NFO del panel
 
-La opción **Ficha** genera NFO XML estándar además de la ficha BBCode. No es
-la ficha legible del tracker: sirve para que un panel, Emby o Plex pueda saber
-qué obra contiene el release. FileBot aporta los IDs de TMDb, TheTVDB e IMDb;
-si no está disponible, el enlace manual solicitado deja al menos el ID de
-TMDb en películas o IMDb en series.
-
-| Contenido | NFO generados |
-|---|---|
-| Película | `<release>.nfo` con `<movie>` e IDs de película. |
-| Capítulo | `<release>.nfo` con `<episodedetails>` y `tvshow.nfo` con los IDs de la serie. |
-| Temporada completa | `tvshow.nfo`, `season.nfo` y un `<capítulo>.nfo` junto a cada MKV. |
-
-Los IDs que FileBot entrega para una serie identifican la serie, no cada
-episodio. Por eso los capítulos llevan título, temporada y número, mientras
-los IDs se escriben una vez en `tvshow.nfo`; no se inventan IDs de episodios.
-Si no hay ningún ID, se crea el NFO con tipo y título y la tool lo avisa.
+La opción **Ficha** crea un único `<release>.nfo` de texto junto al release.
+Mantiene el formato de trabajo tradicional: release, título, grupo, fuente,
+vídeo, enlaces, audios, subtítulos y MediaInfo. No escribe el campo
+`Uploader`. El archivo se guarda en UTF-8, por lo que conserva tildes, eñes y
+signos de puntuación españoles.
 
 ### Configurar `tracker.yaml`
 

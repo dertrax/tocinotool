@@ -53,13 +53,24 @@ class Config:
             if not ruta.exists():
                 shutil.copyfile(DEFAULTS_DIR / f"{nombre}.yaml", ruta)
             datos = _leer(ruta)
-            # Hasta v2.1.6 ``nfo`` era una plantilla de texto duplicada de la
-            # ficha. Se sustituye por el ajuste del NFO XML estándar. La ficha
-            # BBCode continúa en ``ficha`` y no se pierde información útil.
-            if nombre == "tracker" and isinstance(datos.get("nfo"), str):
-                datos["nfo"] = {"identificacion": True}
+            # Las versiones 2.1.7/2.1.8 usaron NFO XML de identificación.
+            # El panel vuelve a requerir el NFO de texto histórico; se migra
+            # al formato distribuido, que no incluye un campo de uploader.
+            if nombre == "tracker" and isinstance(datos.get("nfo"), dict):
+                datos["nfo"] = defecto.get("nfo", "")
                 self._sucios.add(nombre)
-                ui.info("Configuración NFO migrada: se usarán NFO XML de identificación.")
+                ui.info("Configuración NFO migrada: se usará el NFO de texto del panel, sin uploader.")
+            elif nombre == "tracker" and isinstance(datos.get("nfo"), str):
+                # También se corrige una plantilla histórica que conservara
+                # el campo personal Uploader tras actualizar desde v2.1.6.
+                sin_uploader = "\n".join(
+                    linea for linea in datos["nfo"].splitlines()
+                    if not linea.strip().casefold().startswith("uploader:")
+                )
+                if sin_uploader != datos["nfo"].rstrip("\n"):
+                    datos["nfo"] = sin_uploader.rstrip() + "\n"
+                    self._sucios.add(nombre)
+                    ui.info("Configuración NFO actualizada: se elimina el campo Uploader.")
             # valores del config.yaml antiguo (v2.0) → su fichero nuevo
             for k in defecto:
                 if k in antiguo:

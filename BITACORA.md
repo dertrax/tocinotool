@@ -4,6 +4,15 @@ Historial cronológico de cambios. Para el manual público consultar
 [README.md](README.md); para el estado técnico vigente, [MEMORIA.md](MEMORIA.md).
 Última actualización: 2026-09-13.
 
+## 2026-09-13 — Publicación 2.1.9
+
+- Se recupera el NFO de texto del flujo histórico que necesita el panel: un
+  único `<release>.nfo` con release, título, grupo, fuente, vídeo, enlaces,
+  audios, subtítulos y MediaInfo. Se elimina el campo `Uploader`.
+- El NFO se escribe en UTF-8 para conservar caracteres españoles. La
+  configuración migra automáticamente desde el NFO XML de 2.1.7/2.1.8 y
+  elimina también `Uploader:` de plantillas locales antiguas.
+
 ## 2026-09-13 — Publicación 2.1.8
 
 - Cuando un WEB-DL no contiene ningún subtítulo español marcado como forzado,

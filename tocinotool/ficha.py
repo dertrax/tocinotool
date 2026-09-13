@@ -1,14 +1,12 @@
-"""Ficha BBCode y NFO de identificación (sustituye a TemplateFill/fill_dt.py).
+"""Ficha BBCode y NFO de texto para el panel (sustituye a TemplateFill/fill_dt.py).
 
 Por cada release (mkv suelto o carpeta de temporada) genera `<release>.txt` con
 la plantilla de config/tracker.yaml (`ficha.pelicula` / `ficha.serie`) rellena con:
 título, año/episodio, grupo, usuario, fuentes, lista de audios y subtítulos y
 el MediaInfo completo en castellano. Además escribe `info.txt` con los nombres
-de todos los releases procesados y NFO XML para que bibliotecas y paneles
-identifiquen el tipo de contenido.
+de todos los releases procesados y un NFO de texto para el panel.
 """
 import re
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -125,138 +123,6 @@ def mediainfo_texto(mkv: Path) -> str:
     return txt.replace(str(mkv.parent) + ("\\" if "\\" in str(mkv) else "/"), "").strip()
 
 
-def _nfo_habilitado(cfg) -> bool:
-    """La configuración antigua guardaba aquí una plantilla de texto.
-
-    Desde v2.1.7 el .nfo es XML estándar. Las instalaciones que todavía tengan
-    esa plantilla se consideran activadas para no requerir ninguna acción del
-    usuario tras actualizar.
-    """
-    nfo = cfg.get("nfo", {})
-    return not isinstance(nfo, dict) or bool(nfo.get("identificacion", True))
-
-
-def _texto_xml(nodo: ET.Element, etiqueta: str, texto: object) -> None:
-    if texto not in (None, ""):
-        ET.SubElement(nodo, etiqueta).text = str(texto)
-
-
-def _anadir_ids_nfo(nodo: ET.Element, enlaces: Optional[metadatos.Enlaces], orden: Tuple[str, ...]) -> bool:
-    """Añade IDs reales de FileBot, sin convertir el ID de una serie en el de
-    un episodio. Devuelve si se escribió al menos uno.
-    """
-    if not enlaces:
-        return False
-    encontrados = [(servicio, getattr(enlaces, servicio + "id", "")) for servicio in orden]
-    encontrados = [(servicio, valor) for servicio, valor in encontrados if valor]
-    for indice, (servicio, valor) in enumerate(encontrados):
-        ET.SubElement(nodo, "uniqueid", type=servicio, default="true" if indice == 0 else "false").text = valor
-    return bool(encontrados)
-
-
-def _guardar_xml(ruta: Path, raiz: ET.Element) -> None:
-    """Escribe XML legible y UTF-8, formato compatible con lectores NFO."""
-    ET.indent(raiz, space="  ")
-    ET.ElementTree(raiz).write(ruta, encoding="utf-8", xml_declaration=True)
-
-
-def _nfo_serie(ruta: Path, titulo: str, anio: str, enlaces: Optional[metadatos.Enlaces]) -> bool:
-    raiz = ET.Element("tvshow")
-    _texto_xml(raiz, "title", titulo)
-    _texto_xml(raiz, "year", anio)
-    # Para una serie TVDB suele ser el identificador más específico; los otros
-    # quedan disponibles como alternativas para Emby, Plex y los paneles.
-    hay_ids = _anadir_ids_nfo(raiz, enlaces, ("tvdb", "tmdb", "imdb"))
-
-    # No se pisan metadatos de otra serie en una carpeta mezclada.
-    if ruta.exists():
-        try:
-            previo = ET.parse(ruta).getroot()
-            titulo_previo = (previo.findtext("title") or "").strip()
-            if previo.tag == "tvshow" and titulo_previo and titulo_previo.casefold() != titulo.casefold():
-                ui.aviso(f"{ruta.parent.name}: no se reemplaza tvshow.nfo de otra serie ({titulo_previo}).")
-                return hay_ids
-        except ET.ParseError:
-            ui.aviso(f"{ruta.name}: no era un XML válido; se reemplaza por el NFO de identificación.")
-    _guardar_xml(ruta, raiz)
-    return hay_ids
-
-
-def _nfo_episodio(ruta: Path, titulo: str, temporada: int, episodio: int) -> None:
-    """NFO de capítulo. Los IDs de FileBot son de la *serie*, por lo que se
-    guardan correctamente en tvshow.nfo y no se falsean como si fuesen IDs del
-    episodio individual.
-    """
-    raiz = ET.Element("episodedetails")
-    _texto_xml(raiz, "title", f"{titulo} - S{temporada:02d}E{episodio:02d}")
-    _texto_xml(raiz, "showtitle", titulo)
-    _texto_xml(raiz, "season", temporada)
-    _texto_xml(raiz, "episode", episodio)
-    _guardar_xml(ruta, raiz)
-
-
-def _nfo_temporada(ruta: Path, titulo: str, temporada: int) -> None:
-    raiz = ET.Element("season")
-    _texto_xml(raiz, "title", f"Temporada {temporada}")
-    _texto_xml(raiz, "showtitle", titulo)
-    _texto_xml(raiz, "seasonnumber", temporada)
-    _guardar_xml(ruta, raiz)
-
-
-def _generar_nfo_identificacion(entrada: Path, tipo: str, titulo: str, anio: str,
-                                 temporada: int, episodio: int,
-                                 enlaces: Optional[metadatos.Enlaces]) -> Tuple[List[Path], bool]:
-    """Genera NFO sidecar estándar según película, capítulo o temporada.
-
-    - película: ``<video>.nfo`` con ``<movie>`` e IDs de película;
-    - capítulo: ``<video>.nfo`` con ``<episodedetails>`` y ``tvshow.nfo`` con
-      los IDs de serie;
-    - temporada: ``tvshow.nfo`` + ``season.nfo`` y un sidecar por capítulo.
-
-    Esta separación es importante: FileBot da IDs de *serie*, no IDs únicos de
-    cada episodio. Así no se generan identificadores falsos.
-    """
-    escritos: List[Path] = []
-    if tipo == "pelicula":
-        raiz = ET.Element("movie")
-        _texto_xml(raiz, "title", titulo)
-        _texto_xml(raiz, "year", anio)
-        hay_ids = _anadir_ids_nfo(raiz, enlaces, ("tmdb", "imdb", "tvdb"))
-        ruta = entrada.with_suffix(".nfo")
-        _guardar_xml(ruta, raiz)
-        return [ruta], hay_ids
-
-    carpeta = entrada if entrada.is_dir() else entrada.parent
-    hay_ids = _nfo_serie(carpeta / "tvshow.nfo", titulo, anio, enlaces)
-    escritos.append(carpeta / "tvshow.nfo")
-    if tipo == "capitulo":
-        ruta = entrada.with_suffix(".nfo")
-        _nfo_episodio(ruta, titulo, temporada, episodio)
-        return escritos + [ruta], hay_ids
-
-    ruta_temporada = carpeta / "season.nfo"
-    _nfo_temporada(ruta_temporada, titulo, temporada)
-    escritos.append(ruta_temporada)
-    sin_numerar = []
-    for mkv in sorted(carpeta.rglob("*.mkv")):
-        m = _RE_SERIE_EP.match(mkv.name)
-        if not m:
-            sin_numerar.append(mkv.name)
-            continue
-        token = m.group(2).upper()
-        nums = re.match(r"S(\d{2})E(\d{1,3})", token)
-        if not nums:  # defensa ante un nombre que cumplía el patrón antiguo
-            sin_numerar.append(mkv.name)
-            continue
-        ruta = mkv.with_suffix(".nfo")
-        _nfo_episodio(ruta, titulo, int(nums.group(1)), int(nums.group(2)))
-        escritos.append(ruta)
-    if sin_numerar:
-        ui.aviso("No se creó NFO de capítulo para: " + ", ".join(sin_numerar[:3]) +
-                 ("…" if len(sin_numerar) > 3 else ""))
-    return escritos, hay_ids
-
-
 def generar(cfg, entrada: Path, fuentes: Optional[Tuple[str, str]] = None, silencioso: bool = False,
             fuente_defecto: str = "", enlaces: Optional[metadatos.Enlaces] = None) -> Optional[Tuple[Path, str]]:
     mkv = _primer_mkv(entrada)
@@ -303,26 +169,24 @@ def generar(cfg, entrada: Path, fuentes: Optional[Tuple[str, str]] = None, silen
             else _preguntar_fuente(cfg, "", "Fuente de audio y subtítulos")
 
     v = probe.analizar(mkv, cfg).video
+    base = re.sub(r"\.mkv$", "", nombre, flags=re.IGNORECASE)
     campos = dict(
         titulo=titulo, anio=anio, episodio=episodio, grupo=grupo, usuario=cfg.get("usuario", ""),
         fuente_video=fuente_video, fuente_audio=fuente_audio,
         audios=audios(cfg, mkv), subtitulos=subtitulos(cfg, mkv), mediainfo=mediainfo_texto(mkv),
-        release=re.sub(r"\.mkv$", "", nombre, flags=re.IGNORECASE), enlaces=chr(10).join(enlaces.lineas()) if enlaces else "",
+        release=base, enlaces=chr(10).join(enlaces.lineas()) if enlaces else "",
         resolucion=f"{v.ancho}x{v.alto}" if v else "",
         codec_video=cfg.nombre_codec_video(v.codec, preguntar=False) if v else "",
     )
     destino = entrada.parent / (nombre + ".txt")
     destino.write_text(plantilla.format(**campos), encoding="utf-8")
-    nfos: List[Path] = []
-    if _nfo_habilitado(cfg):
-        anio_nfo = anio or (enlaces.anio if enlaces else "")
-        nfos, hay_ids = _generar_nfo_identificacion(entrada, tipo_nfo, titulo, anio_nfo, temporada_nfo,
-                                                     episodio_nfo, enlaces)
-        if not hay_ids:
-            ui.aviso("NFO creado sin ID externo: el panel podrá ver el tipo y el título, "
-                     "pero no identificarlo automáticamente. Añade el enlace solicitado al generar la ficha.")
-    sufijo_nfo = " + NFO de identificación" if nfos else ""
-    ui.ok((destino.name + sufijo_nfo) if silencioso else f"Ficha: {destino.name}{sufijo_nfo}")
+    nfo = cfg.get("nfo", "")
+    if isinstance(nfo, str) and nfo.strip():
+        # UTF-8 conserva acentos, eñes y la puntuación española tanto en el
+        # panel como al abrir el NFO con un editor moderno de Windows.
+        (entrada.parent / (base + ".nfo")).write_text(nfo.format(**campos), encoding="utf-8")
+    ui.ok((destino.name + (" + .nfo" if isinstance(nfo, str) and nfo.strip() else ""))
+          if silencioso else f"Ficha: {destino.name}")
     return destino, _nombre_release(nombre)
 
 
