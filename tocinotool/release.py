@@ -185,7 +185,8 @@ def flujo(cfg, carpeta: Optional[Path] = None) -> Optional[Path]:
             ui.titulo("MUXER (orden, nombres, flags)")
             ui.ok("Ya hay una pista AC3 por cada idioma: no hay nada que convertir.")
             mux.procesar_carpeta(cfg, raiz, preguntar_opciones=False, conservar_audio=ctx.conservar_originales,
-                                 conservar_subs=True, preguntar_borrado=False, solo=entrada_directa)
+                                 conservar_subs=True, preguntar_borrado=False, solo=entrada_directa,
+                                 perfil_subs=ctx.origen)
         else:
             # Conversor y muxer comparten Workspace/ReleaseGroup: funciona igual
             # con un MKV de entrada que con vídeo elemental y archivos sueltos.

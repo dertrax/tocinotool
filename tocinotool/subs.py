@@ -99,6 +99,56 @@ def preparar_suelto(ruta: Path, destino_dir: Path, cfg=None) -> Path:
     return ruta
 
 
+# Formatos de texto que FFmpeg puede convertir limpiamente a SubRip. Los PGS y
+# VobSub son imágenes: convertirlos a SRT exige OCR y nunca debe inventarse con
+# una simple conversión de contenedor.
+_FORMATOS_TEXTO = {"subrip", "srt", "ass", "ssa", "webvtt", "mov_text", "tx3g", "text", "eia_608", "eia_708"}
+_FORMATOS_IMAGEN = {"hdmv_pgs_subtitle", "pgs", "dvd_subtitle", "dvdsub", "vobsub", "sup", "idx"}
+
+
+def es_subtitulo_texto(codec_o_formato: str) -> bool:
+    return (codec_o_formato or "").lower() in _FORMATOS_TEXTO
+
+
+def es_subtitulo_imagen(codec_o_formato: str) -> bool:
+    return (codec_o_formato or "").lower() in _FORMATOS_IMAGEN
+
+
+def extraer_srt_interno(video: Path, indice: int, codec: str, salida: Path, cfg=None) -> Path:
+    """Extrae cualquier subtítulo *de texto* de un contenedor como SRT.
+
+    No acepta PGS/VobSub: necesitan OCR y emitir un SRT vacío o falso sería
+    peor que detener el release y pedir el SRT real.
+    """
+    codec = (codec or "").lower()
+    if not es_subtitulo_texto(codec):
+        tipo = "PGS/VobSub (imagen)" if es_subtitulo_imagen(codec) else (codec or "formato desconocido")
+        raise RuntimeError(f"{video.name}: {tipo} no se puede convertir a SRT sin OCR. Añade el SRT correspondiente.")
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)
+    if codec == "webvtt":
+        vtt = salida.with_suffix(".vtt")
+        tools.ejecutar_silencioso([ffmpeg, "-y", "-nostdin", "-hide_banner", "-loglevel", "error",
+                                   "-i", str(video), "-map", f"0:{indice}", "-c:s", "webvtt", str(vtt)])
+        _vtt_a_srt(vtt, salida)
+    else:
+        tools.ejecutar_silencioso([ffmpeg, "-y", "-nostdin", "-hide_banner", "-loglevel", "error",
+                                   "-i", str(video), "-map", f"0:{indice}", "-c:s", "srt", str(salida)])
+        salida.write_text(limpiar_texto_srt(leer_texto(salida)), encoding="utf-8")
+    if not salida.exists() or not salida.read_text(encoding="utf-8", errors="replace").strip():
+        raise RuntimeError(f"{video.name}: no se obtuvo un SRT legible de la pista {indice}.")
+    return salida
+
+
+def extraer_ass_interno(video: Path, indice: int, salida: Path, cfg=None) -> Path:
+    """Extrae ASS/SSA de un contenedor para analizar carteles reales."""
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)
+    tools.ejecutar_silencioso([ffmpeg, "-y", "-nostdin", "-hide_banner", "-loglevel", "error",
+                               "-i", str(video), "-map", f"0:{indice}", "-c:s", "ass", str(salida)])
+    return salida
+
+
 _VTT_TIEMPO = re.compile(
     r"^\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[.](\d{3})\s+-->\s+"
     r"(?:(\d{1,2}):)?(\d{2}):(\d{2})[.](\d{3})(?:\s+.*)?$"

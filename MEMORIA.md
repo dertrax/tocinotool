@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.1.6
+# Memoria del proyecto — tociNoTool v2.1.7
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -24,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.1.6-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.1.7-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos
@@ -88,12 +88,15 @@ asistente permite reintentar, descargar, indicar ruta o posponer.
   por idioma y calidad.
 - `ac3.convertir_fuente()` reutiliza los AC3 de `temporal/` tras validar codec,
   bitrate, canales y duración; un derivado de una interrupción se regenera.
-- Subtítulos: SRT forzado, SRT completo, ASS forzado, ASS completo y después
-  otros formatos. ASS/SSA se conserva y genera SRT; carteles posicionados
-  producen variante forzada.
-- ASS/SSA interno se comporta igual que un ASS suelto: conserva la pista
-  original y extrae SRT. `_variante_es_explicita()` da prioridad a títulos
-  declarativos (`Castellano`, `latino`, `es-419`) antes de analizar el texto.
+- Subtítulos: todo formato de texto no-SRT, integrado o suelto, genera SRT.
+  WEB-DL solo conserva como fuente adicional ASS/SSA; Encode/Rip conservan la
+  fuente original junto al SRT. Cada pista final no-SRT exige su SRT equivalente.
+  PGS/VobSub requieren OCR: si no se aporta un SRT real, el mux se detiene.
+- Si un WEB-DL tiene un único ASS/SSA español completo, se inspeccionan sus
+  estilos/posiciones y solo se extraen ASS+SRT forzados cuando hay carteles
+  reales. SRT/VTT no generan forzados por inferencia. `_variante_es_explicita()`
+  da prioridad a títulos declarativos (`Castellano`, `latino`, `es-419`) antes
+  de analizar el texto.
 - WebVTT se convierte con el lector propio de `subs.py`, no con FFmpeg: retiene
   texto y etiquetas SRT comunes, no colores/fondo/posición. Evita los SRT
   vacíos que FFmpeg podía generar con perfiles WebVTT de Netflix.
@@ -115,7 +118,15 @@ multiplexa y verifica, y se detiene antes del renombrado automático.
 
 Alternativa: renombrar manualmente y usar la opción 6. Si faltan metadatos,
 `metadatos.pedir_enlace_manual()` solicita TMDb para película o IMDb para serie,
-valida el enlace y lo añade a ficha, `.nfo` e `info.txt`. Es opcional.
+valida el enlace y lo añade a ficha, NFO XML e `info.txt`. Es opcional.
+
+`ficha.py` genera NFO XML de identificación: película = `<movie>` junto al
+release; capítulo = `<episodedetails>` junto al MKV + `tvshow.nfo`; temporada
+= `tvshow.nfo`, `season.nfo` y un sidecar por episodio. Los IDs de FileBot
+son de película o serie: los de una serie solo van en `tvshow.nfo`, nunca se
+declaran erróneamente como IDs de episodio. La antigua plantilla de NFO de
+texto se migra automáticamente a `nfo.identificacion: true`; la ficha BBCode
+sigue siendo el documento legible para el tracker.
 
 La licencia es personal, válida para varios equipos del mismo usuario; nunca se
 presenta como compartible entre personas.
@@ -140,9 +151,12 @@ presenta como compartible entre personas.
 1. `python -m compileall -q tocinotool` dentro de `.venv`.
 2. Probar launcher sin configuración y asistente con FileBot presente, ausente y
    sin licencia.
-3. Probar ficha sin metadatos: TMDb para película e IMDb para serie.
-4. Verificar que el paquete no contiene `config/`, `.venv/`, `logs/` ni legacy.
-5. Calcular SHA-256 y compartir solo el ZIP sin prefijo `NO_COMPARTIR-`.
+3. Probar ficha sin metadatos: TMDb para película e IMDb para serie; comprobar
+   el NFO de película, capítulo y temporada completa.
+4. Probar WEB-DL con ASS interno y externo (SRT + ASS, y carteles solo si son
+   detectables); comprobar que PGS/VobSub sin SRT detiene el mux con un aviso.
+5. Verificar que el paquete no contiene `config/`, `.venv/`, `logs/` ni legacy.
+6. Calcular SHA-256 y compartir solo el ZIP sin prefijo `NO_COMPARTIR-`.
 
 ## Repositorio y binarios
 

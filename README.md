@@ -1,4 +1,4 @@
-# tociNoTool v2.1.6
+# tociNoTool v2.1.7
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -92,7 +92,7 @@ suelto. Con un MKV procesa exclusivamente ese contenedor.
    continua (por ejemplo, `S02E25…S02E48`): si FileBot reparte los capítulos
    en otras temporadas, la tool repite la prueba limitada a la temporada del
    nombre (`S02E25 → S02E01`).
-7. Crear torrent, ficha, `.nfo`, `info.txt` y capturas.
+7. Crear torrent, ficha, NFO de identificación, `info.txt` y capturas.
 
 Los originales quedan en `originales/` después de validar el MKV final. Los derivados van a `temporal/` y solo
 se limpian tras una verificación correcta.
@@ -114,10 +114,17 @@ pero no se usa scraping ni una API externa obligatoria.
   bitrate, canales y duración frente a su fuente. Uno incompleto o incompatible
   se avisa y se regenera.
 - El muxer aplica idioma, nombre, orden y flags default/forced.
-- ASS/SSA se conserva y se convierte también a SRT. Los carteles posicionados
-  producen variantes forzadas ASS y SRT.
-- Lo mismo se aplica cuando ASS/SSA ya viene dentro del MKV: se conserva el
-  ASS original y se extrae una copia SRT con el mismo idioma y tipo.
+- Todo subtítulo de texto que no sea SRT se convierte a SRT, venga suelto o
+  integrado en el contenedor. En WEB-DL solo se conserva además el ASS/SSA
+  original, porque aporta posiciones y estilos; WebVTT y otros formatos de
+  texto quedan normalizados como SRT.
+- En Encode y Blu-ray Rip/Remux se conserva también la fuente original, pero
+  cada pista no-SRT debe tener su SRT equivalente. PGS/VobSub son imágenes y
+  requieren OCR: si no hay un SRT real correspondiente, la tool detiene el
+  mux en vez de inventar subtítulos.
+- Si un WEB-DL solo tiene un ASS/SSA español completo, se revisan estilos y
+  posicionamiento para extraer carteles reales como SRT y ASS forzados. Un
+  SRT/VTT sin esa información no genera un forzado inventado.
 - Los WebVTT de plataformas se convierten directamente a SRT: se conserva el
   texto y la cursiva, pero no las clases de color/fondo ni el posicionamiento
   básico de WebVTT. Un nombre como `.forced.vtt` mantiene el flag forzado.
@@ -142,7 +149,7 @@ pero no se usa scraping ni una API externa obligatoria.
 | 3 | Muxer: ordenar, nombrar y marcar pistas. |
 | 4 | Renombrar con FileBot. |
 | 5 | Crear `.torrent`. |
-| 6 | Generar ficha BBCode, `.nfo` e `info.txt`. |
+| 6 | Generar ficha BBCode, NFO de identificación e `info.txt`. |
 | 8 | Parser de series y correlación sin FileBot. |
 | v | Verificar pistas, flags, duración, título y adjuntos. |
 | 7 | Limpieza de archivos. |
@@ -171,11 +178,30 @@ La URL announce y el comentario del tracker se rellenan únicamente en
 | `release.yaml` | Perfiles WEB-DL, Encode y Blu-ray. |
 | `plataformas.yaml` | Tags de plataforma y sus nombres. |
 | `renombrado.yaml` | Plantillas y grupos de FileBot. |
-| `tracker.yaml` | Tracker, torrent y plantillas de ficha. |
+| `tracker.yaml` | Tracker, torrent, ficha BBCode y NFO de identificación. |
 | `capturas.yaml` | Capturas y tonemapping. |
 
 `tocinotool/es.csv` solo traduce etiquetas de MediaInfo para la ficha; no define
 idiomas, codecs ni reglas del muxer.
+
+### NFO de identificación
+
+La opción **Ficha** genera NFO XML estándar además de la ficha BBCode. No es
+la ficha legible del tracker: sirve para que un panel, Emby o Plex pueda saber
+qué obra contiene el release. FileBot aporta los IDs de TMDb, TheTVDB e IMDb;
+si no está disponible, el enlace manual solicitado deja al menos el ID de
+TMDb en películas o IMDb en series.
+
+| Contenido | NFO generados |
+|---|---|
+| Película | `<release>.nfo` con `<movie>` e IDs de película. |
+| Capítulo | `<release>.nfo` con `<episodedetails>` y `tvshow.nfo` con los IDs de la serie. |
+| Temporada completa | `tvshow.nfo`, `season.nfo` y un `<capítulo>.nfo` junto a cada MKV. |
+
+Los IDs que FileBot entrega para una serie identifican la serie, no cada
+episodio. Por eso los capítulos llevan título, temporada y número, mientras
+los IDs se escriben una vez en `tvshow.nfo`; no se inventan IDs de episodios.
+Si no hay ningún ID, se crea el NFO con tipo y título y la tool lo avisa.
 
 ### Configurar `tracker.yaml`
 

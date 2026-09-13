@@ -225,7 +225,8 @@ def procesar_grupos(cfg, grupos: list["ReleaseGroup"], perfil: str, revisar_plan
             sueltos.extend(c.ruta for c in grupo.audios)
         sueltos.extend(ac3s)
         plan = mux.construir_plan(grupo.video.ruta, grupo.video.ruta.parent / (grupo.video.ruta.stem + ".mkv"),
-                                  cfg, sueltos, conservar_audio=conservar, conservar_subs=True)
+                                  cfg, sueltos, conservar_audio=conservar, conservar_subs=True,
+                                  perfil_subs=perfil)
         # En Encode los audios externos originales tampoco entran al MKV; se
         # conservan junto al resto de fuentes, nunca al lado del release final.
         if not conservar:

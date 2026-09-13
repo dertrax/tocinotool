@@ -56,27 +56,12 @@ ficha:
     {mediainfo}
     [/Spoiler]
 
-# ---------------------------------------------------------------------------
-# NFO de texto (<release>.nfo) por si el tracker migra a otro panel.
-# Mismos placeholders que la ficha, más {release} {enlaces} {resolucion} {codec_video}
-# ---------------------------------------------------------------------------
-nfo: |
-  {release}
-
-  Titulo:     {titulo} {anio}{episodio}
-  Grupo:      {grupo}
-  Uploader:   {usuario}
-  Fuente:     {fuente_video}
-  Video:      {resolucion} {codec_video}
-
-  {enlaces}
-
-  {audios}
-
-  {subtitulos}
-
-  ---- MediaInfo ----
-  {mediainfo}
+# NFO XML de identificación, compatible con bibliotecas y paneles.
+# Película: <release>.nfo (<movie>); capítulo: <release>.nfo
+# (<episodedetails>) + tvshow.nfo; temporada: tvshow.nfo, season.nfo y un
+# NFO por capítulo. Los IDs vienen de FileBot o del enlace manual solicitado.
+nfo:
+  identificacion: true
 
 # Enlaces que se buscan tras el renombrado (info.txt y .nfo)
 enlaces:

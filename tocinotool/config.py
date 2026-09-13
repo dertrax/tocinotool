@@ -53,6 +53,13 @@ class Config:
             if not ruta.exists():
                 shutil.copyfile(DEFAULTS_DIR / f"{nombre}.yaml", ruta)
             datos = _leer(ruta)
+            # Hasta v2.1.6 ``nfo`` era una plantilla de texto duplicada de la
+            # ficha. Se sustituye por el ajuste del NFO XML estándar. La ficha
+            # BBCode continúa en ``ficha`` y no se pierde información útil.
+            if nombre == "tracker" and isinstance(datos.get("nfo"), str):
+                datos["nfo"] = {"identificacion": True}
+                self._sucios.add(nombre)
+                ui.info("Configuración NFO migrada: se usarán NFO XML de identificación.")
             # valores del config.yaml antiguo (v2.0) → su fichero nuevo
             for k in defecto:
                 if k in antiguo:
