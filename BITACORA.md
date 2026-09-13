@@ -12,6 +12,9 @@ Historial cronológico de cambios. Para el manual público consultar
 - El NFO se escribe en UTF-8 para conservar caracteres españoles. La
   configuración migra automáticamente desde el NFO XML de 2.1.7/2.1.8 y
   elimina también `Uploader:` de plantillas locales antiguas.
+- El BAT acumulativo deja de exigir una coincidencia literal con la versión
+  base: reconoce revisiones intermedias de la rama, como 2.1.6 al actualizar
+  desde 2.1.0 a 2.1.9, y mantiene el aviso solo para otra rama distinta.
 
 ## 2026-09-13 — Publicación 2.1.8
 

@@ -247,7 +247,8 @@ binarios; nunca empaqueta la configuración particular.
 
 Para usuarios de una versión antigua sin una base intermedia disponible, el
 mantenedor puede usar `-Acumulativa -BaseVersion X.Y.Z`. Genera un paquete de
-código y plantillas compatible con esa versión, sin volver a descargar los
+código y plantillas compatible con las revisiones de esa misma rama desde la
+base indicada (por ejemplo, `2.1.x` desde `2.1.0`), sin volver a descargar los
 binarios portables ni tocar datos locales.
 
 ## Documentación del proyecto

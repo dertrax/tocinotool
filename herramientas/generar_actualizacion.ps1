@@ -83,6 +83,18 @@ Get-ChildItem -LiteralPath $nuevoPath -File -Recurse | ForEach-Object {
 if ($cambios.Count -eq 0) { throw 'No hay ficheros públicos modificados entre ambas versiones.' }
 
 $baseVersion = if ($Acumulativa) { $BaseVersion } elseif ((Split-Path -Leaf $basePath) -match 'v(.+)-windows$') { $Matches[1] } else { 'anterior' }
+$ramaCompatible = $BaseVersion -replace '\.\d+$', ''
+if ($Acumulativa) {
+    # Una acumulativa lleva todas las plantillas/código desde su base. No debe
+    # alarmar a quien ya tenga una revisión intermedia de la misma rama.
+    $mensajeCompatibilidad = "Esta actualizacion acumulativa es compatible con versiones $ramaCompatible.x desde $BaseVersion."
+    $comprobacionVersion = "findstr /C:`"__version__ = `" `"%CD%\tocinotool\__init__.py`" | findstr /C:`"$ramaCompatible.`" >nul"
+    $avisoVersion = "No se ha detectado una version $ramaCompatible.x. Revisa que el ZIP corresponda a tu instalacion antes de continuar."
+} else {
+    $mensajeCompatibilidad = "Esta actualizacion esta preparada para la version $baseVersion."
+    $comprobacionVersion = "findstr /C:`"__version__ = `" `"%CD%\tocinotool\__init__.py`" | findstr /C:`"$baseVersion`" >nul"
+    $avisoVersion = "No se ha detectado exactamente la version $baseVersion. Revisa que el ZIP corresponda a tu instalacion antes de continuar."
+}
 $zipNombre = "tociNoTool-update-v$Version.zip"
 $batNombre = "Actualizar-tociNoTool-v$Version.bat"
 $zip = Join-Path $Destino $zipNombre
@@ -106,7 +118,7 @@ echo  ================================================================
 echo                    tociNoTool - Actualizacion v$Version
 echo  ================================================================
 echo.
-echo  Esta actualizacion esta preparada para la version $baseVersion.
+echo  $mensajeCompatibilidad
 echo  Mantendra intactos config, .venv, logs y tus datos del tracker.
 echo.
 echo  Se actualizaran estos archivos:
@@ -122,10 +134,9 @@ if not exist "%CD%\tocinotool\__init__.py" (
   echo  ERROR: esta carpeta no parece una instalacion de tociNoTool.
   goto :fin
 )
-findstr /C:"__version__ = " "%CD%\tocinotool\__init__.py" | findstr /C:"$baseVersion" >nul
+$comprobacionVersion
 if errorlevel 1 (
-  echo  AVISO: no se ha detectado exactamente la version $baseVersion.
-  echo  Revisa que el ZIP corresponda a tu instalacion antes de continuar.
+  echo  AVISO: $avisoVersion
 )
 echo.
 set /p "CONFIRMAR=Aplicar actualizacion? [S/N]: "

@@ -37,8 +37,9 @@ enviar mensajes ni publicar cambios automáticamente.
   de la instalación, informa de los cambios, conserva `config/`, `.venv/` y
   `logs/`, borra el ZIP al completar y no elimina archivos obsoletos.
 - El modo `-Acumulativa -BaseVersion X.Y.Z` permite actualizar instalaciones
-  antiguas cuando no hay una cadena de parches. Incluye código y plantillas,
-  no `binaries/` ni datos locales.
+  antiguas cuando no hay una cadena de parches. Reconoce las revisiones de la
+  misma rama desde la base (por ejemplo, 2.1.x desde 2.1.0), incluye código y
+  plantillas, no `binaries/` ni datos locales.
 
 ## Arranque y diagnóstico
 
