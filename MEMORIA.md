@@ -1,4 +1,4 @@
-# Memoria del proyecto — tociNoTool v2.1.7
+# Memoria del proyecto — tociNoTool v2.1.8
 
 Estado técnico para retomar el desarrollo. Complementa al manual público
 ([README.md](README.md)) y al historial ([BITACORA.md](BITACORA.md)).
@@ -24,7 +24,7 @@ enviar mensajes ni publicar cambios automáticamente.
 ## Distribución Windows
 
 - Entrada: `launcher.bat`.
-- Paquete: `publicar/tociNoTool-v2.1.7-windows.zip`.
+- Paquete: `publicar/tociNoTool-v2.1.8-windows.zip`.
 - Incluye código, launcher, manual, requisitos, valores por defecto y binarios
   portables de FFmpeg, MKVToolNix y MediaInfo.
 - Excluye `config/`, `.venv/`, `logs/`, `_legacy/`, `binaries/_legacy/`, datos
@@ -94,9 +94,13 @@ asistente permite reintentar, descargar, indicar ruta o posponer.
   PGS/VobSub requieren OCR: si no se aporta un SRT real, el mux se detiene.
 - Si un WEB-DL tiene un único ASS/SSA español completo, se inspeccionan sus
   estilos/posiciones y solo se extraen ASS+SRT forzados cuando hay carteles
-  reales. SRT/VTT no generan forzados por inferencia. `_variante_es_explicita()`
-  da prioridad a títulos declarativos (`Castellano`, `latino`, `es-419`) antes
-  de analizar el texto.
+  reales. Si no hay ningún forzado español y existe una sola fuente SRT
+  completa (o SDH como alternativa), `subs.carteles_srt_mayusculas()` propone
+  sus cues mayoritariamente en mayúsculas; `mux.confirmar_forzados_mayusculas()`
+  exige aprobación antes de crear el SRT forzado. Nunca se infiere desde VTT,
+  ni con varias fuentes del mismo tipo, ni cuando ya hay un forzado español.
+  `_variante_es_explicita()` da prioridad a títulos declarativos (`Castellano`,
+  `latino`, `es-419`) antes de analizar el texto.
 - WebVTT se convierte con el lector propio de `subs.py`, no con FFmpeg: retiene
   texto y etiquetas SRT comunes, no colores/fondo/posición. Evita los SRT
   vacíos que FFmpeg podía generar con perfiles WebVTT de Netflix.
@@ -154,7 +158,8 @@ presenta como compartible entre personas.
 3. Probar ficha sin metadatos: TMDb para película e IMDb para serie; comprobar
    el NFO de película, capítulo y temporada completa.
 4. Probar WEB-DL con ASS interno y externo (SRT + ASS, y carteles solo si son
-   detectables); comprobar que PGS/VobSub sin SRT detiene el mux con un aviso.
+   detectables), un SRT único con carteles en mayúsculas y un SRT con un
+   forzado explícito; comprobar que PGS/VobSub sin SRT detiene el mux con un aviso.
 5. Verificar que el paquete no contiene `config/`, `.venv/`, `logs/` ni legacy.
 6. Calcular SHA-256 y compartir solo el ZIP sin prefijo `NO_COMPARTIR-`.
 

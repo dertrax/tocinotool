@@ -315,6 +315,57 @@ def extraer_carteles_ass(ruta: Path, destino_dir: Path) -> Optional[tuple]:
     return salida_srt, salida_ass
 
 
+_SRT_BLOQUE = re.compile(
+    r"(?:^|\n\s*\n)\s*(?:\d+\s*\n)?"
+    r"(?P<inicio>\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s+-->\s+"
+    r"(?P<fin>\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})(?:[^\n]*)\n"
+    r"(?P<texto>.*?)(?=\n\s*\n|\Z)", re.DOTALL)
+
+
+def carteles_srt_mayusculas(ruta: Path) -> list[tuple[str, str, str]]:
+    """Devuelve posibles carteles escritos en mayúsculas en un SRT completo.
+
+    Es una señal auxiliar, no una forma de adivinar diálogos: cada cue debe
+    contener letras, estar casi enteramente en mayúsculas y ser una minoría
+    clara del fichero. Así se descartan SRTs cuya convención sea escribir todo
+    el diálogo en mayúsculas. El llamador solo puede usarla si no había una
+    pista española ``forced`` declarada y debe pedir confirmación al usuario.
+    """
+    texto = leer_texto(ruta).replace("\r\n", "\n").replace("\r", "\n").lstrip("\ufeff")
+    cues = []
+    for bloque in _SRT_BLOQUE.finditer(texto):
+        limpio = limpiar_texto_srt(bloque.group("texto")).strip()
+        letras = [c for c in limpio if c.isalpha()]
+        # Tres letras evitan etiquetar como cartel "OK", siglas o ruidos.
+        if len(letras) < 3:
+            continue
+        mayusculas = sum(c.isupper() for c in letras)
+        if mayusculas / len(letras) >= 0.85:
+            cues.append((bloque.group("inicio").replace(".", ","),
+                         bloque.group("fin").replace(".", ","), limpio))
+    total = len(list(_SRT_BLOQUE.finditer(texto)))
+    # Si una parte apreciable del SRT es mayúscula, puede ser simplemente la
+    # convención de ese proveedor o diálogo enfático; no se propone nada.
+    if not cues or total < 2 or len(cues) * 3 > total:
+        return []
+    return cues
+
+
+def escribir_forzado_srt(ruta_origen: Path, destino_dir: Path,
+                         cues: list[tuple[str, str, str]]) -> Path:
+    """Materializa los cues previamente confirmados como ``*.forced.srt``."""
+    if not cues:
+        raise RuntimeError("No hay carteles en mayúsculas para guardar.")
+    destino_dir.mkdir(parents=True, exist_ok=True)
+    salida = destino_dir / f"{ruta_origen.stem}.forced.srt"
+    contenido = "\n\n".join(
+        f"{i}\n{inicio} --> {fin}\n{texto}"
+        for i, (inicio, fin, texto) in enumerate(cues, 1)
+    )
+    salida.write_text(contenido + "\n", encoding="utf-8")
+    return salida
+
+
 def texto_pista(video: Path, indice: int, cfg=None, segundos: int = 1200) -> str:
     """Texto de un subtítulo interno (los primeros `segundos`) como srt, vía ffmpeg."""
     ffmpeg = tools.buscar("ffmpeg", cfg, obligatorio=True)

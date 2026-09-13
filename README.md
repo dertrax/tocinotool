@@ -1,4 +1,4 @@
-# tociNoTool v2.1.7
+# tociNoTool v2.1.8
 
 Herramienta de preparación de releases para la comunidad scene en español.
 Convierte audio a AC3,
@@ -123,8 +123,13 @@ pero no se usa scraping ni una API externa obligatoria.
   requieren OCR: si no hay un SRT real correspondiente, la tool detiene el
   mux en vez de inventar subtítulos.
 - Si un WEB-DL solo tiene un ASS/SSA español completo, se revisan estilos y
-  posicionamiento para extraer carteles reales como SRT y ASS forzados. Un
-  SRT/VTT sin esa información no genera un forzado inventado.
+  posicionamiento para extraer carteles reales como SRT y ASS forzados.
+- Si no existe ninguna pista española marcada como forzada y solo hay una
+  fuente SRT española completa o SDH, la tool puede detectar carteles escritos
+  mayoritariamente en MAYÚSCULAS. Lo avisa y pregunta antes de crear un SRT
+  forzado; el SRT completo/SDH original siempre se conserva. Si hay completo y
+  SDH, prueba primero el completo; con varias fuentes iguales no propone nada.
+  No se hace esta inferencia desde WebVTT ni cuando ya hay un forzado español.
 - Los WebVTT de plataformas se convierten directamente a SRT: se conserva el
   texto y la cursiva, pero no las clases de color/fondo ni el posicionamiento
   básico de WebVTT. Un nombre como `.forced.vtt` mantiene el flag forzado.
